@@ -582,16 +582,16 @@ int main(void) {
 		arm_sqrt_q31((MS.i_q_setpoint_temp*MS.i_q_setpoint_temp+MS.i_d_setpoint_temp*MS.i_d_setpoint_temp)<<1,&MS.i_setpoint_abs);
 		MS.i_setpoint_abs = (MS.i_setpoint_abs>>16)+1;
 
-
-		if (MS.i_setpoint_abs > MS.phase_current_limit) {
-			MS.i_q_setpoint = (MS.i_q_setpoint_temp * MS.phase_current_limit) / MS.i_setpoint_abs; //division!
-			MS.i_d_setpoint = (MS.i_d_setpoint_temp * MS.phase_current_limit) / MS.i_setpoint_abs; //division!
-			MS.i_setpoint_abs = MS.phase_current_limit;
-		} else {
-			MS.i_q_setpoint=MS.i_q_setpoint_temp;
-			MS.i_d_setpoint=MS.i_d_setpoint_temp;
+		if(MS.hall_angle_detect_flag){ //run only, if autodetect is not active
+			if (MS.i_setpoint_abs > MS.phase_current_limit) {
+				MS.i_q_setpoint = (MS.i_q_setpoint_temp * MS.phase_current_limit) / MS.i_setpoint_abs; //division!
+				MS.i_d_setpoint = (MS.i_d_setpoint_temp * MS.phase_current_limit) / MS.i_setpoint_abs; //division!
+				MS.i_setpoint_abs = MS.phase_current_limit;
+			} else {
+				MS.i_q_setpoint=MS.i_q_setpoint_temp;
+				MS.i_d_setpoint=MS.i_d_setpoint_temp;
+			}
 		}
-
 		  //calculate battery current
 
 			iq_cum-=iq_cum>>8;
