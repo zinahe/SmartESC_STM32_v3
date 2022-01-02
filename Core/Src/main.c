@@ -177,19 +177,26 @@ char char_dyn_adc_state = 1;
 char char_dyn_adc_state_old = 1;
 uint8_t assist_factor[10] = { 0, 51, 102, 153, 204, 255, 255, 255, 255, 255 };
 
-uint16_t VirtAddVarTab[NB_OF_VAR] = { 0x01, 0x02, 0x03 };
+uint16_t VirtAddVarTab[NB_OF_VAR] = { 	EEPROM_POS_HALL_ORDER,
+										EEPROM_POS_MINUS120_DEG,
+										EEPROM_POS_MINUS60_DEG,
+										EEPROM_POS_0_DEG,
+										EEPROM_POS_PLUS60_DEG,
+										EEPROM_POS_PLUS120_DEG,
+										EEPROM_POS_PLUS180_DEG
+									};
 enum{Stop, SixStep, Interpolation, PLL};
 q31_t switchtime[3];
 volatile uint16_t adcData[8]; //Buffer for ADC1 Input
 
 
 //Rotor angle scaled from degree to q31 for arm_math. -180°-->-2^31, 0°-->0, +180°-->+2^31
-const q31_t DEG_0 = 0;
-const q31_t DEG_plus60 = 715827883;
-const q31_t DEG_plus120 = 1431655765;
-const q31_t DEG_plus180 = 2147483647;
-const q31_t DEG_minus60 = -715827883;
-const q31_t DEG_minus120 = -1431655765;
+q31_t DEG_0 = 0;
+q31_t DEG_plus60 = 715827883;
+q31_t DEG_plus120 = 1431655765;
+q31_t DEG_plus180 = 2147483647;
+q31_t DEG_minus60 = -715827883;
+q31_t DEG_minus120 = -1431655765;
 
 static q31_t tics_lower_limit;
 static q31_t tics_higher_limit;
@@ -233,81 +240,64 @@ void autodetect() {
 	SET_BIT(TIM1->BDTR, TIM_BDTR_MOE);
 	MS.hall_angle_detect_flag = 0; //set uq to contstant value in FOC.c for open loop control
 	q31_rotorposition_absolute = 1 << 31;
-	uint8_t zerocrossing = 0;
-	q31_t diffangle = 0;
+	MS.i_d_setpoint= 53; //set MS.id to appr. 2000mA
+	MS.i_q_setpoint= 0; //set MS.id to appr. 2000mA
+//	uint8_t zerocrossing = 0;
+//	q31_t diffangle = 0;
 	HAL_Delay(5);
 	for (i = 0; i < 1080; i++) {
 		q31_rotorposition_absolute += 11930465; //drive motor in open loop with steps of 1�
 		HAL_Delay(5);
-		if (q31_rotorposition_absolute > -300
-				&& q31_rotorposition_absolute < 300) {
-			switch (ui8_hall_case) //12 cases for each transition from one stage to the next. 6x forward, 6x reverse
-			{
-			//6 cases for forward direction
-			case 64:
-				zerocrossing = 45;
-				diffangle = DEG_plus180;
-				break;
-			case 45:
-				zerocrossing = 51;
-				diffangle = DEG_minus120;
-				break;
-			case 51:
-				zerocrossing = 13;
-				diffangle = DEG_minus60;
-				break;
-			case 13:
-				zerocrossing = 32;
-				diffangle = DEG_0;
-				break;
-			case 32:
-				zerocrossing = 26;
-				diffangle = DEG_plus60;
-				break;
-			case 26:
-				zerocrossing = 64;
-				diffangle = DEG_plus120;
-				break;
-
-				//6 cases for reverse direction
-			case 46:
-				zerocrossing = 62;
-				diffangle = -DEG_plus60;
-				break;
-			case 62:
-				zerocrossing = 23;
-				diffangle = -DEG_0;
-				break;
-			case 23:
-				zerocrossing = 31;
-				diffangle = -DEG_minus60;
-				break;
-			case 31:
-				zerocrossing = 15;
-				diffangle = -DEG_minus120;
-				break;
-			case 15:
-				zerocrossing = 54;
-				diffangle = -DEG_plus180;
-				break;
-			case 54:
-				zerocrossing = 46;
-				diffangle = -DEG_plus120;
-				break;
-
-			} // end case
-
-		}
 
 		if (ui8_hall_state_old != ui8_hall_state) {
 			printf_("angle: %d, hallstate:  %d, hallcase %d \n",
 					(int16_t) (((q31_rotorposition_absolute >> 23) * 180) >> 8),
 					ui8_hall_state, ui8_hall_case);
 
-			if (ui8_hall_case == zerocrossing) {
-				q31_rotorposition_motor_specific = q31_rotorposition_absolute
-						- diffangle;
-			}
+			switch (ui8_hall_case) //12 cases for each transition from one stage to the next. 6x forward, 6x reverse
+			{
+			//6 cases for forward direction
+			case 64:
+				DEG_plus180=q31_rotorposition_absolute;
+				break;
+			case 45:
+				DEG_minus120=q31_rotorposition_absolute;;
+				break;
+			case 51:
+				DEG_minus60=q31_rotorposition_absolute;
+				break;
+			case 13:
+				DEG_0=q31_rotorposition_absolute;
+				break;
+			case 32:
+				DEG_plus60=q31_rotorposition_absolute;
+				break;
+			case 26:
+				DEG_plus120=q31_rotorposition_absolute;
+				break;
+
+				//6 cases for reverse direction
+			case 46:
+				DEG_plus60=-q31_rotorposition_absolute;
+				break;
+			case 62:
+				DEG_0=-q31_rotorposition_absolute;
+				break;
+			case 23:
+				DEG_minus60=-q31_rotorposition_absolute;
+				break;
+			case 31:
+				DEG_minus120=-q31_rotorposition_absolute;
+				break;
+			case 15:
+				DEG_plus180=-q31_rotorposition_absolute;
+				break;
+			case 54:
+				DEG_plus120=-q31_rotorposition_absolute;
+				break;
+
+			} // end case
+
 
 			ui8_hall_state_old = ui8_hall_state;
 		}
@@ -325,8 +315,7 @@ void autodetect() {
     q31_tics_filtered=1000000;
 
 	HAL_FLASH_Unlock();
-	EE_WriteVariable(EEPROM_POS_SPEC_ANGLE,
-			q31_rotorposition_motor_specific >> 16);
+
 	if (i8_recent_rotor_direction == 1) {
 		EE_WriteVariable(EEPROM_POS_HALL_ORDER, 1);
 		i16_hall_order = 1;
@@ -334,6 +323,12 @@ void autodetect() {
 		EE_WriteVariable(EEPROM_POS_HALL_ORDER, -1);
 		i16_hall_order = -1;
 	}
+	EE_WriteVariable(EEPROM_POS_MINUS120_DEG, DEG_minus120 >> 16);
+	EE_WriteVariable(EEPROM_POS_MINUS60_DEG, DEG_minus60 >> 16);
+	EE_WriteVariable(EEPROM_POS_0_DEG, DEG_0 >> 16);
+	EE_WriteVariable(EEPROM_POS_PLUS60_DEG, DEG_plus60 >> 16);
+	EE_WriteVariable(EEPROM_POS_PLUS120_DEG, DEG_plus120 >> 16);
+	EE_WriteVariable(EEPROM_POS_PLUS180_DEG, DEG_plus180 >> 16);
 
 	HAL_FLASH_Lock();
 
@@ -498,12 +493,26 @@ int main(void) {
 
        // autodetect();
 
-   	EE_ReadVariable(EEPROM_POS_SPEC_ANGLE, &MP.spec_angle);
+
  
    	// set motor specific angle to value from emulated EEPROM only if valid
    	if(MP.spec_angle!=0xFFFF) {
-   		q31_rotorposition_motor_specific = MP.spec_angle<<16;
+   		int16_t temp;
    		EE_ReadVariable(EEPROM_POS_HALL_ORDER, &i16_hall_order);
+   		EE_ReadVariable(EEPROM_POS_MINUS120_DEG, &temp);
+   		DEG_minus120 = temp<<16;
+
+   		EE_ReadVariable(EEPROM_POS_MINUS60_DEG, &temp);
+   		DEG_minus60 = temp<<16;
+   		EE_ReadVariable(EEPROM_POS_0_DEG, &temp);
+   		DEG_0 = temp<<16;
+   		EE_ReadVariable(EEPROM_POS_PLUS60_DEG, &temp);
+   		DEG_plus60 = temp<<16;
+   		EE_ReadVariable(EEPROM_POS_PLUS120_DEG, &temp);
+   		DEG_plus120 = temp<<16;
+   		EE_ReadVariable(EEPROM_POS_PLUS180_DEG, &temp);
+  		DEG_plus180 = temp<<16;
+
    	}else{
                 autodetect();
         }
@@ -1396,68 +1405,68 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		{
 		//6 cases for forward direction
 		case 64:
-			q31_rotorposition_hall = DEG_plus120 * i16_hall_order
-					+ q31_rotorposition_motor_specific;
+			q31_rotorposition_hall = DEG_plus120 * i16_hall_order;
+
 			i8_recent_rotor_direction = 1;
 			uint16_full_rotation_counter = 0;
 			break;
 		case 45:
-			q31_rotorposition_hall = DEG_plus180 * i16_hall_order
-					+ q31_rotorposition_motor_specific;
+			q31_rotorposition_hall = DEG_plus180 * i16_hall_order;
+
 			i8_recent_rotor_direction = 1;
 			break;
 		case 51:
-			q31_rotorposition_hall = DEG_minus120 * i16_hall_order
-					+ q31_rotorposition_motor_specific;
+			q31_rotorposition_hall = DEG_minus120 * i16_hall_order;
+
 			i8_recent_rotor_direction = 1;
 			break;
 		case 13:
-			q31_rotorposition_hall = DEG_minus60 * i16_hall_order
-					+ q31_rotorposition_motor_specific;
+			q31_rotorposition_hall = DEG_minus60 * i16_hall_order;
+
 			i8_recent_rotor_direction = 1;
 			uint16_half_rotation_counter = 0;
 			break;
 		case 32:
-			q31_rotorposition_hall = DEG_0 * i16_hall_order
-					+ q31_rotorposition_motor_specific;
+			q31_rotorposition_hall = DEG_0 * i16_hall_order;
+
 			i8_recent_rotor_direction = 1;
 			break;
 		case 26:
-			q31_rotorposition_hall = DEG_plus60 * i16_hall_order
-					+ q31_rotorposition_motor_specific;
+			q31_rotorposition_hall = DEG_plus60 * i16_hall_order;
+
 			i8_recent_rotor_direction = 1;
 			break;
 
 			//6 cases for reverse direction
 		case 46:
-			q31_rotorposition_hall = DEG_plus120 * i16_hall_order
-					+ q31_rotorposition_motor_specific;
+			q31_rotorposition_hall = DEG_plus120 * i16_hall_order;
+
 			i8_recent_rotor_direction = -1;
 			break;
 		case 62:
-			q31_rotorposition_hall = DEG_plus60 * i16_hall_order
-					+ q31_rotorposition_motor_specific;
+			q31_rotorposition_hall = DEG_plus60 * i16_hall_order;
+
 			i8_recent_rotor_direction = -1;
 			break;
 		case 23:
-			q31_rotorposition_hall = DEG_0 * i16_hall_order
-					+ q31_rotorposition_motor_specific;
+			q31_rotorposition_hall = DEG_0 * i16_hall_order;
+
 			i8_recent_rotor_direction = -1;
 			uint16_half_rotation_counter = 0;
 			break;
 		case 31:
-			q31_rotorposition_hall = DEG_minus60 * i16_hall_order
-					+ q31_rotorposition_motor_specific;
+			q31_rotorposition_hall = DEG_minus60 * i16_hall_order;
+
 			i8_recent_rotor_direction = -1;
 			break;
 		case 15:
-			q31_rotorposition_hall = DEG_minus120 * i16_hall_order
-					+ q31_rotorposition_motor_specific;
+			q31_rotorposition_hall = DEG_minus120 * i16_hall_order;
+
 			i8_recent_rotor_direction = -1;
 			break;
 		case 54:
-			q31_rotorposition_hall = DEG_plus180 * i16_hall_order
-					+ q31_rotorposition_motor_specific;
+			q31_rotorposition_hall = DEG_plus180 * i16_hall_order;
+
 			i8_recent_rotor_direction = -1;
 			uint16_full_rotation_counter = 0;
 			break;
