@@ -553,8 +553,8 @@ int main(void) {
 		checkButton(&MS);
 #endif
 
-#if 0 //(DISPLAY_TYPE == DISPLAY_TYPE_DEBUG) // && defined(FAST_LOOP_LOG))
-		if(ui8_UART_TxCplt_flag){
+#if (defined(FAST_LOOP_LOG))
+		if(ui8_UART_TxCplt_flag&&ui8_debug_state==3){
 	        sprintf_(buffer, "%d, %d, %d, %d, %d, %d\r\n", e_log[k][0], e_log[k][1], e_log[k][2],e_log[k][3],e_log[k][4],e_log[k][5]); //>>24
 			i=0;
 			while (buffer[i] != '\0')
@@ -668,7 +668,7 @@ int main(void) {
 
 			MS.Temperature = adcData[ADC_TEMP] * 41 >> 8; //0.16 is calibration constant: Analog_in[10mV/°C]/ADC value. Depending on the sensor LM35)
 			MS.Voltage = q31_Battery_Voltage;
-			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",q31_tics_filtered>>3,(((q31_rotorposition_hall >> 23) * 180) >> 8) , ui8_hall_state, ui8_hall_case, MS.Battery_Current,i16_hall_order , i8_recent_rotor_direction,i8_direction,q31_angle_per_tic);
+			//printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",q31_tics_filtered>>3,(((q31_rotorposition_hall >> 23) * 180) >> 8) , ui8_hall_state, ui8_hall_case, MS.Battery_Current,i16_hall_order , i8_recent_rotor_direction,i8_direction,q31_angle_per_tic);
 			if(MS.system_state==Stop||MS.system_state==SixStep) MS.Speed=0;
 			else MS.Speed=tics_to_speed(q31_tics_filtered>>3);
 
@@ -1332,7 +1332,8 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc) {
 		   q31_rotorposition_PLL += q31_angle_per_tic;
 		  // temp4=q31_angle_per_tic*ui16_timertics;
 #endif
-		   q31_rotorposition_PLL += q31_angle_per_tic;
+
+		   temp1=(((q31_rotorposition_PLL >> 23) * 180) >> 8);
 			if (ui16_tim2_recent < ui16_timertics+(ui16_timertics>>2) && !ui8_overflow_flag && !ui8_6step_flag) { //prevent angle running away at standstill
 #ifdef SPEED_PLL
 			q31_rotorposition_absolute=q31_rotorposition_PLL;
@@ -1352,7 +1353,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc) {
 
 			}
 		} //end if hall angle detect
-
+		temp2=(((q31_rotorposition_absolute >> 23) * 180) >> 8);
 		__enable_irq(); //EXIT CRITICAL SECTION!!!!!!!!!!!!!!
 
 #ifndef DISABLE_DYNAMIC_ADC
@@ -1489,7 +1490,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		q31_angle_per_tic = speed_PLL(q31_rotorposition_PLL,q31_rotorposition_hall);
 
 #endif
-		q31_angle_per_tic = speed_PLL(q31_rotorposition_PLL,q31_rotorposition_hall);
+
 	} //end if
 }
 
@@ -1709,8 +1710,8 @@ q31_t speed_PLL(q31_t actual, q31_t target) {
   q31_t q31_p = (delta >> P_FACTOR_PLL);   	//7 for Shengyi middrive, 10 for BionX IGH3
   q31_d_i += (delta >> I_FACTOR_PLL);				//11 for Shengyi middrive, 10 for BionX IGH3
 
-  if (q31_d_i>((Hall_32>>19)*500/ui16_timertics)<<16) q31_d_i = ((Hall_32>>19)*500/ui16_timertics)<<16;
-  if (q31_d_i<-((Hall_32>>19)*500/ui16_timertics)<<16) q31_d_i =- ((Hall_32>>19)*500/ui16_timertics)<<16;
+ // if (q31_d_i>((Hall_32>>19)*500/ui16_timertics)<<16) q31_d_i = ((Hall_32>>19)*500/ui16_timertics)<<16;
+ // if (q31_d_i<-((Hall_32>>19)*500/ui16_timertics)<<16) q31_d_i =- ((Hall_32>>19)*500/ui16_timertics)<<16;
 
   q31_t q31_d_dc = q31_p + q31_d_i;
 

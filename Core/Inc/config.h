@@ -57,12 +57,12 @@
 
 #define VOLTAGE_MIN 300
 #define REGEN_CURRENT 1000
-//#define FAST_LOOP_LOG
+#define FAST_LOOP_LOG
 //#define DISABLE_DYNAMIC_ADC
 
 #define REGEN_CURRENT_MAX 10000
 
-//#define SPEED_PLL
+#define SPEED_PLL
 #define P_FACTOR_PLL 9 //7 for original M365 motor
 #define I_FACTOR_PLL 10 //7 for original M365 motor
 
