@@ -248,11 +248,12 @@ void autodetect() {
 	for (i = 0; i < 1080; i++) {
 		q31_rotorposition_absolute += 11930465; //drive motor in open loop with steps of 1�
 		HAL_Delay(5);
+		printf_("%d, %d, %d, %d\n", temp3>>16,temp4>>16,temp5,temp6);
 
 		if (ui8_hall_state_old != ui8_hall_state) {
-			printf_("angle: %d, hallstate:  %d, hallcase %d \n",
-					(int16_t) (((q31_rotorposition_absolute >> 23) * 180) >> 8),
-					ui8_hall_state, ui8_hall_case);
+//			printf_("angle: %d, hallstate:  %d, hallcase %d \n",
+//					(int16_t) (((q31_rotorposition_absolute >> 23) * 180) >> 8),
+//					ui8_hall_state, ui8_hall_case);
 
 			switch (ui8_hall_case) //12 cases for each transition from one stage to the next. 6x forward, 6x reverse
 			{
@@ -373,7 +374,7 @@ int main(void) {
 	/* USER CODE END SysInit */
 
 	/* Initialize all configured peripherals */
-	MX_GPIO_Init();
+ 	MX_GPIO_Init();
 	MX_DMA_Init();
 	MX_USART1_UART_Init();
 	MX_USART3_UART_Init();
@@ -666,7 +667,7 @@ int main(void) {
 
 			MS.Temperature = adcData[ADC_TEMP] * 41 >> 8; //0.16 is calibration constant: Analog_in[10mV/°C]/ADC value. Depending on the sensor LM35)
 			MS.Voltage = q31_Battery_Voltage;
-			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n", MS.i_d_setpoint, MS.Speed*100, iq_cum>>8, id_cum>>8, MS.Battery_Current,i16_hall_order , i8_recent_rotor_direction,temp5,temp6);
+			//printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n", MS.i_d_setpoint, MS.Speed*100, iq_cum>>8, id_cum>>8, MS.Battery_Current,i16_hall_order , i8_recent_rotor_direction,temp5,temp6);
 			if(MS.system_state==Stop||MS.system_state==SixStep) MS.Speed=0;
 			else MS.Speed=tics_to_speed(q31_tics_filtered>>3);
 
@@ -1704,7 +1705,7 @@ void calculate_tic_limits(void){
 q31_t speed_PLL(q31_t actual, q31_t target) {
   static q31_t q31_d_i = 0;
 
-  temp6 = target - actual; // used on fast log only 
+
 
   q31_t delta = target - actual;
   q31_t q31_p = (delta >> P_FACTOR_PLL);   	//7 for Shengyi middrive, 10 for BionX IGH3
@@ -1725,8 +1726,7 @@ q31_t get_battery_current(q31_t iq,q31_t id,q31_t uq,q31_t ud){
 	q31_t ibatd;
 	ibatq=(iq * uq *CAL_I) >> 11;
 	ibatd=(id * ud *CAL_I) >> 11;
-	temp5=ibatq;
-	temp6=ibatd;
+
 	return abs(ibatd)+abs(ibatq);
 }
 

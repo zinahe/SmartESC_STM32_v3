@@ -66,6 +66,10 @@ void FOC_calculation(int16_t int16_i_as, int16_t int16_i_bs, q31_t q31_teta,
 			&q31_i_beta);
 
 	arm_sin_cos_q31(q31_teta, &sinevalue, &cosinevalue);
+	if(sinevalue==-2147483648)sinevalue=-2147483647;
+	if(cosinevalue==2147483648)cosinevalue=2147483647;
+	temp3=sinevalue;
+	temp4=cosinevalue;
 
 	// Park transformation
 	arm_park_q31(q31_i_alpha, q31_i_beta, &q31_i_d, &q31_i_q, sinevalue,
@@ -90,12 +94,18 @@ void FOC_calculation(int16_t int16_i_as, int16_t int16_i_bs, q31_t q31_teta,
 	        MS_FOC->u_d=300;
 	}
 	else runPIcontrol();
+//       MS_FOC->u_q=0;
+//       MS_FOC->u_d=300;
+//       sinevalue=0;
+//       cosinevalue=-2147483648;
 
 //	runPIcontrol();
 
 	//inverse Park transformation
 	arm_inv_park_q31(MS_FOC->u_d, MS_FOC->u_q, &q31_u_alpha, &q31_u_beta,
 			-sinevalue, cosinevalue);
+	temp5=q31_u_alpha;
+	temp6=q31_u_beta;
 
 #ifdef FAST_LOOP_LOG
 	temp1=int16_i_as;
