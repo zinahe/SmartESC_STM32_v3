@@ -190,13 +190,13 @@ q31_t switchtime[3];
 volatile uint16_t adcData[8]; //Buffer for ADC1 Input
 
 
-//Rotor angle scaled from degree to q31 for arm_math. -180°-->-2^31, 0°-->0, +180°-->+2^31
+//Rotor angle scaled from degree to q31 for arm_math. -180°-->-2^31, 0°-->0, +180°-->+2^31 read in from EEPROM
 q31_t Hall_13 = 0;
-q31_t Hall_32 = 715827883;
-q31_t Hall_26 = 1431655765;
-q31_t Hall_64 = 2147483647;
-q31_t Hall_51 = -715827883;
-q31_t Hall_45 = -1431655765;
+q31_t Hall_32 = 0;
+q31_t Hall_26 = 0;
+q31_t Hall_64 = 0;
+q31_t Hall_51 = 0;
+q31_t Hall_45 = 0;
 
 static q31_t tics_lower_limit;
 static q31_t tics_higher_limit;
@@ -502,27 +502,27 @@ int main(void) {
    		EE_ReadVariable(EEPROM_POS_HALL_ORDER, &i16_hall_order);
    		EE_ReadVariable(EEPROM_POS_HALL_45, &temp);
    		Hall_45 = temp<<16;
-   		printf_("DEG_minus120: %d \n",	(int16_t) (((Hall_45 >> 23) * 180) >> 8));
+   		printf_("Hall_45: %d \n",	(int16_t) (((Hall_45 >> 23) * 180) >> 8));
 
    		EE_ReadVariable(EEPROM_POS_HALL_51, &temp);
    		Hall_51 = temp<<16;
-   		printf_("DEG_minus60: %d \n",	(int16_t) (((Hall_51 >> 23) * 180) >> 8));
+   		printf_("Hall_51: %d \n",	(int16_t) (((Hall_51 >> 23) * 180) >> 8));
 
    		EE_ReadVariable(EEPROM_POS_HALL_13, &temp);
    		Hall_13 = temp<<16;
-   		printf_("DEG_0: %d \n",	(int16_t) (((Hall_13 >> 23) * 180) >> 8));
+   		printf_("Hall_13: %d \n",	(int16_t) (((Hall_13 >> 23) * 180) >> 8));
 
    		EE_ReadVariable(EEPROM_POS_HALL_32, &temp);
    		Hall_32 = temp<<16;
-   		printf_("DEG_plus60: %d \n",	(int16_t) (((Hall_32 >> 23) * 180) >> 8));
+   		printf_("Hall_32: %d \n",	(int16_t) (((Hall_32 >> 23) * 180) >> 8));
 
    		EE_ReadVariable(EEPROM_POS_HALL_26, &temp);
    		Hall_26 = temp<<16;
-   		printf_("DEG_plus120: %d \n",	(int16_t) (((Hall_26 >> 23) * 180) >> 8));
+   		printf_("Hall_26: %d \n",	(int16_t) (((Hall_26 >> 23) * 180) >> 8));
 
    		EE_ReadVariable(EEPROM_POS_HALL_64, &temp);
   		Hall_64 = temp<<16;
-  		printf_("DEG_plus180: %d \n",	(int16_t) (((Hall_64 >> 23) * 180) >> 8));
+  		printf_("Hall_64: %d \n",	(int16_t) (((Hall_64 >> 23) * 180) >> 8));
 
    	}else{
                 autodetect();
@@ -667,7 +667,7 @@ int main(void) {
 
 			MS.Temperature = adcData[ADC_TEMP] * 41 >> 8; //0.16 is calibration constant: Analog_in[10mV/°C]/ADC value. Depending on the sensor LM35)
 			MS.Voltage = q31_Battery_Voltage;
-			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n", MS.i_d_setpoint, MS.Speed*100, iq_cum>>8, id_cum>>8, MS.Battery_Current,i16_hall_order , i8_recent_rotor_direction,temp5,temp6);
+			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n", (((q31_rotorposition_hall >> 23) * 180) >> 8), ui8_hall_state, ui8_hall_case, id_cum>>8, MS.Battery_Current,i16_hall_order , i8_recent_rotor_direction,i8_direction,temp6);
 			if(MS.system_state==Stop||MS.system_state==SixStep) MS.Speed=0;
 			else MS.Speed=tics_to_speed(q31_tics_filtered>>3);
 
@@ -1453,7 +1453,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
 			//6 cases for reverse direction
 		case 46:
-			q31_rotorposition_hall = Hall_64;
+			q31_rotorposition_hall = Hall_64*i16_hall_order;
 
 			i8_recent_rotor_direction = -1;
 			break;
@@ -1488,7 +1488,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		} // end case
 
 #ifdef SPEED_PLL
-		q31_angle_per_tic = speed_PLL(q31_rotorposition_PLL,-q31_rotorposition_hall);
+		q31_angle_per_tic = speed_PLL(q31_rotorposition_PLL,q31_rotorposition_hall);
 
 #endif
 
@@ -1597,23 +1597,23 @@ void get_standstill_position() {
 	switch (ui8_hall_state) {
 	//6 cases for forward direction
 	case 2:
-		q31_rotorposition_hall = Hall_13;
-		break;
-	case 6:
 		q31_rotorposition_hall = Hall_32;
 		break;
-	case 4:
+	case 6:
 		q31_rotorposition_hall = Hall_26;
 		break;
-	case 5:
+	case 4:
 		q31_rotorposition_hall = Hall_64;
 		break;
-	case 1:
+	case 5:
 		q31_rotorposition_hall = Hall_45;
+		break;
+	case 1:
+		q31_rotorposition_hall = Hall_51;
 
 		break;
 	case 3:
-		q31_rotorposition_hall = Hall_51;
+		q31_rotorposition_hall = Hall_13;
 		break;
 
 	}
