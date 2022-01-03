@@ -194,12 +194,12 @@
 #define NB_OF_VAR             ((uint8_t)0x07)
 
 #define EEPROM_POS_HALL_ORDER	((uint16_t)0x00)
-#define EEPROM_POS_MINUS120_DEG	  ((uint16_t)0x01)
-#define EEPROM_POS_MINUS60_DEG	  ((uint16_t)0x02)
-#define EEPROM_POS_0_DEG	  ((uint16_t)0x03)
-#define EEPROM_POS_PLUS60_DEG	  ((uint16_t)0x04)
-#define EEPROM_POS_PLUS120_DEG	  ((uint16_t)0x05)
-#define EEPROM_POS_PLUS180_DEG	  ((uint16_t)0x06)
+#define EEPROM_POS_HALL_45	  ((uint16_t)0x01)
+#define EEPROM_POS_HALL_51	  ((uint16_t)0x02)
+#define EEPROM_POS_HALL_13	  ((uint16_t)0x03)
+#define EEPROM_POS_HALL_32	  ((uint16_t)0x04)
+#define EEPROM_POS_HALL_26	  ((uint16_t)0x05)
+#define EEPROM_POS_HALL_64	  ((uint16_t)0x06)
 /* Exported types ------------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
