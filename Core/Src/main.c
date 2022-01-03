@@ -248,12 +248,12 @@ void autodetect() {
 	for (i = 0; i < 1080; i++) {
 		q31_rotorposition_absolute += 11930465; //drive motor in open loop with steps of 1�
 		HAL_Delay(5);
-		printf_("%d, %d, %d, %d\n", temp3>>16,temp4>>16,temp5,temp6);
+		//printf_("%d, %d, %d, %d\n", temp3>>16,temp4>>16,temp5,temp6);
 
 		if (ui8_hall_state_old != ui8_hall_state) {
-//			printf_("angle: %d, hallstate:  %d, hallcase %d \n",
-//					(int16_t) (((q31_rotorposition_absolute >> 23) * 180) >> 8),
-//					ui8_hall_state, ui8_hall_case);
+			printf_("angle: %d, hallstate:  %d, hallcase %d \n",
+					(int16_t) (((q31_rotorposition_absolute >> 23) * 180) >> 8),
+					ui8_hall_state, ui8_hall_case);
 
 			switch (ui8_hall_case) //12 cases for each transition from one stage to the next. 6x forward, 6x reverse
 			{
@@ -667,7 +667,7 @@ int main(void) {
 
 			MS.Temperature = adcData[ADC_TEMP] * 41 >> 8; //0.16 is calibration constant: Analog_in[10mV/°C]/ADC value. Depending on the sensor LM35)
 			MS.Voltage = q31_Battery_Voltage;
-			//printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n", MS.i_d_setpoint, MS.Speed*100, iq_cum>>8, id_cum>>8, MS.Battery_Current,i16_hall_order , i8_recent_rotor_direction,temp5,temp6);
+			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n", MS.i_d_setpoint, MS.Speed*100, iq_cum>>8, id_cum>>8, MS.Battery_Current,i16_hall_order , i8_recent_rotor_direction,temp5,temp6);
 			if(MS.system_state==Stop||MS.system_state==SixStep) MS.Speed=0;
 			else MS.Speed=tics_to_speed(q31_tics_filtered>>3);
 
@@ -1345,9 +1345,9 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc) {
 #endif
 			} else {
 				ui8_overflow_flag = 1;
-				if(i16_hall_order==i8_direction * i8_reverse_flag)q31_rotorposition_absolute = q31_rotorposition_hall;//-i8_direction*DEG_plus60; //need to substract 60° in interpolation mode, don't understand why recently
-				else if(i16_hall_order==-1 && i8_direction * i8_reverse_flag==1) q31_rotorposition_absolute = q31_rotorposition_hall-715827882;// shift 60 deg to avoid problems at start from standstill
-				else if(i16_hall_order==1 && i8_direction * i8_reverse_flag==-1) q31_rotorposition_absolute = q31_rotorposition_hall+715827882;// shift 60 deg to avoid problems at start from standstill
+				if(i16_hall_order==i8_direction * i8_reverse_flag)q31_rotorposition_absolute = -q31_rotorposition_hall;//-i8_direction*DEG_plus60; //need to substract 60° in interpolation mode, don't understand why recently
+				else if(i16_hall_order==-1 && i8_direction * i8_reverse_flag==1) q31_rotorposition_absolute = -q31_rotorposition_hall-715827882;// shift 60 deg to avoid problems at start from standstill
+				else if(i16_hall_order==1 && i8_direction * i8_reverse_flag==-1) q31_rotorposition_absolute = -q31_rotorposition_hall+715827882;// shift 60 deg to avoid problems at start from standstill
 
 				MS.system_state=SixStep;
 					//	}
@@ -1488,7 +1488,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		} // end case
 
 #ifdef SPEED_PLL
-		q31_angle_per_tic = speed_PLL(q31_rotorposition_PLL,q31_rotorposition_hall);
+		q31_angle_per_tic = speed_PLL(q31_rotorposition_PLL,-q31_rotorposition_hall);
 
 #endif
 
