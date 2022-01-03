@@ -240,6 +240,7 @@ void autodetect() {
 	SET_BIT(TIM1->BDTR, TIM_BDTR_MOE);
 	MS.hall_angle_detect_flag = 0; //set uq to contstant value in FOC.c for open loop control
 	q31_rotorposition_absolute = 1 << 31;
+	i16_hall_order = 1;//reset hall order
 	MS.i_d_setpoint= 200; //set MS.id to appr. 2000mA
 	MS.i_q_setpoint= 0; //set MS.id to appr. 2000mA
 //	uint8_t zerocrossing = 0;
@@ -667,7 +668,7 @@ int main(void) {
 
 			MS.Temperature = adcData[ADC_TEMP] * 41 >> 8; //0.16 is calibration constant: Analog_in[10mV/°C]/ADC value. Depending on the sensor LM35)
 			MS.Voltage = q31_Battery_Voltage;
-			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n", (((q31_rotorposition_hall >> 23) * 180) >> 8), ui8_hall_state, ui8_hall_case, id_cum>>8, MS.Battery_Current,i16_hall_order , i8_recent_rotor_direction,i8_direction,temp6);
+			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",q31_tics_filtered>>3,(((q31_rotorposition_hall >> 23) * 180) >> 8) , ui8_hall_state, ui8_hall_case, MS.Battery_Current,i16_hall_order , i8_recent_rotor_direction,i8_direction,q31_angle_per_tic);
 			if(MS.system_state==Stop||MS.system_state==SixStep) MS.Speed=0;
 			else MS.Speed=tics_to_speed(q31_tics_filtered>>3);
 
@@ -1331,7 +1332,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc) {
 		   q31_rotorposition_PLL += q31_angle_per_tic;
 		  // temp4=q31_angle_per_tic*ui16_timertics;
 #endif
-
+		   q31_rotorposition_PLL += q31_angle_per_tic;
 			if (ui16_tim2_recent < ui16_timertics+(ui16_timertics>>2) && !ui8_overflow_flag && !ui8_6step_flag) { //prevent angle running away at standstill
 #ifdef SPEED_PLL
 			q31_rotorposition_absolute=q31_rotorposition_PLL;
@@ -1345,10 +1346,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc) {
 #endif
 			} else {
 				ui8_overflow_flag = 1;
-				if(i16_hall_order==i8_direction * i8_reverse_flag)q31_rotorposition_absolute = -q31_rotorposition_hall;//-i8_direction*DEG_plus60; //need to substract 60° in interpolation mode, don't understand why recently
-				else if(i16_hall_order==-1 && i8_direction * i8_reverse_flag==1) q31_rotorposition_absolute = -q31_rotorposition_hall-715827882;// shift 60 deg to avoid problems at start from standstill
-				else if(i16_hall_order==1 && i8_direction * i8_reverse_flag==-1) q31_rotorposition_absolute = -q31_rotorposition_hall+715827882;// shift 60 deg to avoid problems at start from standstill
-
+				q31_rotorposition_absolute = q31_rotorposition_hall-i8_direction*357913941;//offset of 30 degree to get the middle of the sector
 				MS.system_state=SixStep;
 					//	}
 
@@ -1421,67 +1419,67 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		case 64:
 			q31_rotorposition_hall = Hall_64;
 
-			i8_recent_rotor_direction = 1;
+			i8_recent_rotor_direction = -i16_hall_order;
 			uint16_full_rotation_counter = 0;
 			break;
 		case 45:
 			q31_rotorposition_hall = Hall_45;
 
-			i8_recent_rotor_direction = 1;
+			i8_recent_rotor_direction = -i16_hall_order;
 			break;
 		case 51:
 			q31_rotorposition_hall = Hall_51;
 
-			i8_recent_rotor_direction = 1;
+			i8_recent_rotor_direction = -i16_hall_order;
 			break;
 		case 13:
 			q31_rotorposition_hall = Hall_13;
 
-			i8_recent_rotor_direction = 1;
+			i8_recent_rotor_direction = -i16_hall_order;
 			uint16_half_rotation_counter = 0;
 			break;
 		case 32:
 			q31_rotorposition_hall = Hall_32;
 
-			i8_recent_rotor_direction = 1;
+			i8_recent_rotor_direction = -i16_hall_order;
 			break;
 		case 26:
 			q31_rotorposition_hall = Hall_26;
 
-			i8_recent_rotor_direction = 1;
+			i8_recent_rotor_direction = -i16_hall_order;
 			break;
 
 			//6 cases for reverse direction
 		case 46:
-			q31_rotorposition_hall = Hall_64*i16_hall_order;
+			q31_rotorposition_hall = Hall_64;
 
-			i8_recent_rotor_direction = -1;
+			i8_recent_rotor_direction = i16_hall_order;
 			break;
 		case 62:
 			q31_rotorposition_hall = Hall_26;
 
-			i8_recent_rotor_direction = -1;
+			i8_recent_rotor_direction = i16_hall_order;
 			break;
 		case 23:
 			q31_rotorposition_hall = Hall_32;
 
-			i8_recent_rotor_direction = -1;
+			i8_recent_rotor_direction = i16_hall_order;
 			uint16_half_rotation_counter = 0;
 			break;
 		case 31:
 			q31_rotorposition_hall = Hall_13;
 
-			i8_recent_rotor_direction = -1;
+			i8_recent_rotor_direction = i16_hall_order;
 			break;
 		case 15:
 			q31_rotorposition_hall = Hall_51;
 
-			i8_recent_rotor_direction = -1;
+			i8_recent_rotor_direction = i16_hall_order;
 			break;
 		case 54:
 			q31_rotorposition_hall = Hall_45;
 
-			i8_recent_rotor_direction = -1;
+			i8_recent_rotor_direction = i16_hall_order;
 			uint16_full_rotation_counter = 0;
 			break;
 
@@ -1491,7 +1489,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		q31_angle_per_tic = speed_PLL(q31_rotorposition_PLL,q31_rotorposition_hall);
 
 #endif
-
+		q31_angle_per_tic = speed_PLL(q31_rotorposition_PLL,q31_rotorposition_hall);
 	} //end if
 }
 
