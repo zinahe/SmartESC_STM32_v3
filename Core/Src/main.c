@@ -209,6 +209,10 @@ q31_t q31_tics_filtered = 128000;
 MotorState_t MS;
 MotorParams_t MP;
 
+//structs for PI_control
+PI_control_t PI_iq;
+PI_control_t PI_id;
+
 int16_t battery_percent_fromcapacity = 50; //Calculation of used watthours not implemented yet
 int16_t wheel_time = 1000;//duration of one wheel rotation for speed calculation
 int16_t current_display;				//pepared battery current for display
@@ -390,6 +394,23 @@ int main(void) {
 
 	MS.phase_current_limit  =PH_CURRENT_MAX_NORMAL;
 	MS.speed_limit = SPEEDLIMIT_NORMAL;
+
+	  //init PI structs
+	  PI_id.gain_i=I_FACTOR_I_D;
+	  PI_id.gain_p=P_FACTOR_I_D;
+	  PI_id.setpoint = 0;
+	  PI_id.limit_output = _U_MAX;
+	  PI_id.max_step=5000;
+	  PI_id.shift=10;
+	  PI_id.limit_i=1800;
+
+	  PI_iq.gain_i=I_FACTOR_I_Q;
+	  PI_iq.gain_p=P_FACTOR_I_Q;
+	  PI_iq.setpoint = 0;
+	  PI_iq.limit_output = _U_MAX;
+	  PI_iq.max_step=5000;
+	  PI_iq.shift=10;
+	  PI_iq.limit_i=_U_MAX;
 
 	calculate_tic_limits();
 
@@ -638,6 +659,11 @@ int main(void) {
 			__HAL_TIM_SET_COUNTER(&htim2, 0); //reset tim2 counter
 			ui16_timertics = 40000; //set interval between two hallevents to a large value
 			i8_recent_rotor_direction = i8_direction * i8_reverse_flag;
+		    if(MS.system_state == Stop)speed_PLL(0,0);//reset integral part
+		    else {
+		    	//PI_iq.integral_part = ((((uint32_SPEEDx100_cumulated*_T))/(MS.Voltage*ui32_KV))<<4)<<PI_iq.shift;
+		    	//PI_iq.out=PI_iq.integral_part;
+		    }
 			SET_BIT(TIM1->BDTR, TIM_BDTR_MOE); //enable PWM if power is wanted
 			get_standstill_position();
 
@@ -1644,29 +1670,50 @@ void runPIcontrol(){
 
 				//control iq
 
-				//if
-				if (!ui8_BC_limit_flag) {
-					q31_u_q_temp = PI_control_i_q(MS.i_q,
-							(q31_t) i8_direction * i8_reverse_flag
-									* MS.i_q_setpoint);
-				} else {
-					if (MS.i_q * i8_direction * i8_reverse_flag > 100) { //motor mode
-						q31_u_q_temp = PI_control_i_q(
-								(MS.Battery_Current >> 6) * i8_direction
-										* i8_reverse_flag,
-								(q31_t) (BATTERYCURRENT_MAX >> 6) * i8_direction
-										* i8_reverse_flag);
-					} else { //generator mode
-						q31_u_q_temp = PI_control_i_q(
-								(MS.Battery_Current >> 6) * i8_direction
-										* i8_reverse_flag,
-								(q31_t) (-REGEN_CURRENT_MAX >> 6) * i8_direction
-										* i8_reverse_flag);
-					}
-				}
+//				//if
+//				if (!ui8_BC_limit_flag) {
+//					q31_u_q_temp = PI_control_i_q(MS.i_q,
+//							(q31_t) i8_direction * i8_reverse_flag
+//									* MS.i_q_setpoint);
+//				} else {
+//					if (MS.i_q * i8_direction * i8_reverse_flag > 100) { //motor mode
+//						q31_u_q_temp = PI_control_i_q(
+//								(MS.Battery_Current >> 6) * i8_direction
+//										* i8_reverse_flag,
+//								(q31_t) (BATTERYCURRENT_MAX >> 6) * i8_direction
+//										* i8_reverse_flag);
+//					} else { //generator mode
+//						q31_u_q_temp = PI_control_i_q(
+//								(MS.Battery_Current >> 6) * i8_direction
+//										* i8_reverse_flag,
+//								(q31_t) (-REGEN_CURRENT_MAX >> 6) * i8_direction
+//										* i8_reverse_flag);
+//					}
+//				}
+
+				  if (!ui8_BC_limit_flag){
+					  PI_iq.recent_value = MS.i_q;
+					  PI_iq.setpoint = MS.i_q_setpoint;
+				  }
+				  else{
+					  if(!MS.brake_active){
+					 // if(HAL_GPIO_ReadPin(Brake_GPIO_Port, Brake_Pin)){
+						  PI_iq.recent_value=  (MS.Battery_Current>>6)*i8_direction*i8_reverse_flag;
+						  PI_iq.setpoint = (BATTERYCURRENT_MAX>>6)*i8_direction*i8_reverse_flag;
+					  	}
+					  else{
+						  PI_iq.recent_value=  (MS.Battery_Current>>6)*i8_direction*i8_reverse_flag;
+						  PI_iq.setpoint = (-REGEN_CURRENT_MAX>>6)*i8_direction*i8_reverse_flag;
+					    }
+				  }
+				  q31_u_q_temp =  PI_control(&PI_iq);
 
 				//Control id
-				q31_u_d_temp = -PI_control_i_d(MS.i_d, MS.i_d_setpoint,	abs(q31_u_q_temp / MAX_D_FACTOR)); //control direct current to recent setpoint
+				//q31_u_d_temp = -PI_control_i_d(MS.i_d, MS.i_d_setpoint,	abs(q31_u_q_temp / MAX_D_FACTOR)); //control direct current to recent setpoint
+				  PI_id.recent_value = MS.i_d;
+				  PI_id.setpoint = MS.i_d_setpoint;
+				  q31_u_d_temp = -PI_control(&PI_id); //control direct current to zero
+
 
 				arm_sqrt_q31((q31_u_d_temp*q31_u_d_temp+q31_u_q_temp*q31_u_q_temp)<<1,&MS.u_abs);
 				MS.u_abs = (MS.u_abs>>16)+1;
@@ -1714,6 +1761,8 @@ q31_t speed_PLL(q31_t actual, q31_t target) {
  // if (q31_d_i<-((Hall_32>>19)*500/ui16_timertics)<<16) q31_d_i =- ((Hall_32>>19)*500/ui16_timertics)<<16;
 
   q31_t q31_d_dc = q31_p + q31_d_i;
+
+  if (!actual&&!target)q31_d_i=0;
 
   // if PWM is disabled, reset q31_d_i
   if (!READ_BIT(TIM1->BDTR, TIM_BDTR_MOE)) q31_d_i = 0;

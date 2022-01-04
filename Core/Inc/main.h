@@ -140,6 +140,7 @@ typedef struct {
 	int8_t error_state;
 	bool light;
 	bool beep;
+	bool brake_active;
 	uint8_t shutdown;
 	int8_t speed_limit;
 	int16_t phase_current_limit;
@@ -166,6 +167,21 @@ typedef struct {
 	int16_t spec_angle;
 
 } MotorParams_t;
+
+typedef struct
+{
+	int16_t       	gain_p;
+	int16_t       	gain_i;
+	int16_t       	limit_i;
+	int16_t       	limit_output;
+	int16_t       	recent_value;
+	int32_t       	setpoint;
+	int32_t       	integral_part;
+	int16_t       	max_step;
+	int32_t       	out;
+	int8_t       	shift;
+
+}PI_control_t;
 
 enum modes {eco=2,normal=0,sport=4};
 enum errors {hall=1,lowbattery=2,overcurrent=4};

@@ -233,11 +233,18 @@ void process_DashboardMessage(MotorState_t *MS, MotorParams_t *MP, uint8_t *mess
 
 		case 0x65: {
 			if(map(message[Brake],BRAKEOFFSET,BRAKEMAX,0,REGEN_CURRENT)>0){
-				if(MS->Speed>2)	MS->i_q_setpoint_temp =-map(message[Brake],BRAKEOFFSET,BRAKEMAX,0,REGEN_CURRENT);
-				else MS->i_q_setpoint_temp =0;
+				if(MS->Speed>2){
+					MS->i_q_setpoint_temp =-map(message[Brake],BRAKEOFFSET,BRAKEMAX,0,REGEN_CURRENT);
+					MS->brake_active=true;
+				}
+				else {
+					MS->i_q_setpoint_temp =0;
+					MS->brake_active=false;
+					}
 				}
 			else{
 				MS->i_q_setpoint_temp = map(message[Throttle],THROTTLEOFFSET,THROTTLEMAX,0,MS->phase_current_limit);
+				MS->brake_active=false;
 				}
 			}
 			break;
