@@ -351,7 +351,7 @@ void autodetect() {
 			(int16_t) (((q31_rotorposition_motor_specific >> 23) * 180) >> 8),
 			i16_hall_order, zerocrossing);
 #endif
-	ui8_KV_detect_flag=25;
+	ui8_KV_detect_flag=20;
 	//HAL_Delay(5);
 
 
@@ -640,22 +640,26 @@ int main(void) {
 		  if(ui8_KV_detect_flag){
 				MS.i_q_setpoint=ui8_KV_detect_flag;;
 				MS.i_d_setpoint=0;
+			  if(MS.u_q){
+					  ui32_KV -=ui32_KV>>4;
+					  ui32_KV += (uint32_SPEEDx100_cumulated)/((MS.Voltage*MS.u_q)>>(21-SPEEDFILTER)); //unit: kph*100/V
+				  }
 			  if(HAL_GetTick()-ui16_KV_detect_counter>1000){
 				  ui8_KV_detect_flag++;
+				  printf_("KV_cumulated= %d,%d\n",ui32_KV>>4);
 				  ui16_KV_detect_counter=HAL_GetTick();
 				  if(MS.u_abs>1900){
 					  ui8_KV_detect_flag=0;
+					  ui32_KV=ui32_KV>>4;
 				  	  HAL_FLASH_Unlock();
-				      	  EE_WriteVariable(EEPROM_POS_KV, (int16_t) (ui32_KV>>4));
+				      	  EE_WriteVariable(EEPROM_POS_KV, (int16_t) (ui32_KV));
 				      HAL_FLASH_Lock();
 
 				  }
-				  printf_("KV_cumulated= %d,%d\n",ui32_KV>>4);
+
+
 			  }
-			  if(MS.u_q){
-				  ui32_KV -=ui32_KV>>4;
-				  ui32_KV += (uint32_SPEEDx100_cumulated)/((MS.Voltage*MS.u_q)>>(21-SPEEDFILTER)); //unit: kph*100/V
-			  }
+
 
 		  }//end KV detect
 
