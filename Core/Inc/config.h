@@ -50,7 +50,7 @@
 #define KV 6 //kph*10 per volt, 7 for original M365 motor
 
 #define BATTERYCURRENT_MAX 8000
-
+#define SPEEDFILTER 3
 
 #define DISPLAY_TYPE DISPLAY_TYPE_M365DASHBOARD
 #define REVERSE -1 //-1 for original M365 motor

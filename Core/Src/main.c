@@ -112,6 +112,10 @@ uint16_t ui16_ph1_offset = 0;
 uint16_t ui16_ph2_offset = 0;
 uint16_t ui16_ph3_offset = 0;
 
+uint8_t ui8_KV_detect_flag=0;
+uint16_t ui16_KV_detect_counter = 0; //for getting timing of the KV detect
+int16_t ui32_KV = 0;
+
 volatile int16_t i16_ph1_current = 0;
 volatile int16_t i16_ph2_current = 0;
 volatile int16_t i16_ph2_current_filter = 0;
@@ -157,6 +161,7 @@ uint16_t uint16_mapped_PAS = 0;
 uint16_t uint16_half_rotation_counter = 0;
 uint16_t uint16_full_rotation_counter = 0;
 int32_t int32_current_target = 0;
+uint32_t uint32_SPEEDx100_cumulated=0;
 
 q31_t q31_t_Battery_Current_accumulated = 0;
 q31_t q31_Battery_Voltage = 0;
@@ -227,6 +232,7 @@ int32_t map(int32_t x, int32_t in_min, int32_t in_max, int32_t out_min,
 		int32_t out_max);
 int32_t speed_to_tics(uint8_t speed);
 int8_t tics_to_speed(uint32_t tics);
+int16_t internal_tics_to_speedx100 (uint32_t tics);
 q31_t speed_PLL (q31_t ist, q31_t soll);
 
 #define JSQR_PHASE_A 0b00011000000000000000 //3
@@ -345,8 +351,9 @@ void autodetect() {
 			(int16_t) (((q31_rotorposition_motor_specific >> 23) * 180) >> 8),
 			i16_hall_order, zerocrossing);
 #endif
+	ui8_KV_detect_flag=15;
 	HAL_Delay(5);
-	//NVIC_SystemReset();
+
 
 }
 
@@ -517,12 +524,12 @@ int main(void) {
 
        // autodetect();
 
-
+   	EE_ReadVariable(EEPROM_POS_HALL_ORDER, &i16_hall_order);
  
-   	// set motor specific angle to value from emulated EEPROM only if valid
-   	if(MP.spec_angle!=0xFFFF) {
+   	// set varaiables to value from emulated EEPROM only if valid
+   	if(i16_hall_order!=0xFFFF) {
    		int16_t temp;
-   		EE_ReadVariable(EEPROM_POS_HALL_ORDER, &i16_hall_order);
+
    		EE_ReadVariable(EEPROM_POS_HALL_45, &temp);
    		Hall_45 = temp<<16;
    		printf_("Hall_45: %d \n",	(int16_t) (((Hall_45 >> 23) * 180) >> 8));
@@ -546,6 +553,8 @@ int main(void) {
    		EE_ReadVariable(EEPROM_POS_HALL_64, &temp);
   		Hall_64 = temp<<16;
   		printf_("Hall_64: %d \n",	(int16_t) (((Hall_64 >> 23) * 180) >> 8));
+
+  		EE_ReadVariable(EEPROM_POS_KV, &ui32_KV);
 
    	}else{
                 autodetect();
@@ -626,6 +635,32 @@ int main(void) {
 				MS.i_d_setpoint=MS.i_d_setpoint_temp;
 			}
 		}
+
+		  if(ui8_KV_detect_flag){
+				MS.i_q_setpoint=ui8_KV_detect_flag;;
+				MS.i_d_setpoint=0;
+			  if(HAL_GetTick()-ui16_KV_detect_counter>1000){
+				  ui8_KV_detect_flag++;
+				  ui16_KV_detect_counter=HAL_GetTick();
+				  if(MS.u_abs>1900){
+					  ui8_KV_detect_flag=0;
+				  	  HAL_FLASH_Unlock();
+				      	  EE_WriteVariable(EEPROM_POS_KV, (int16_t) ui32_KV);
+				      HAL_FLASH_Lock();
+				      printf_("KV_cumulated= %d,\n",ui32_KV);
+				  }
+				  ui32_KV -=ui32_KV>>4;
+				  ui32_KV += ((uint32_SPEEDx100_cumulated*_T))/(MS.Voltage*MS.u_q);
+			  }
+
+
+
+		  }//end KV detect
+
+
+			uint32_SPEEDx100_cumulated -=uint32_SPEEDx100_cumulated>>SPEEDFILTER;
+			uint32_SPEEDx100_cumulated +=internal_tics_to_speedx100(q31_tics_filtered>>3);
+
 		  //calculate battery current
 
 			iq_cum-=iq_cum>>8;
@@ -662,8 +697,8 @@ int main(void) {
 			i8_recent_rotor_direction = i8_direction * i8_reverse_flag;
 		    if(MS.system_state == Stop)speed_PLL(0,0);//reset integral part
 		    else {
-		    	//PI_iq.integral_part = ((((uint32_SPEEDx100_cumulated*_T))/(MS.Voltage*ui32_KV))<<4)<<PI_iq.shift;
-		    	//PI_iq.out=PI_iq.integral_part;
+		    	PI_iq.integral_part = ((((uint32_SPEEDx100_cumulated*_T))/(MS.Voltage*ui32_KV))<<4)<<PI_iq.shift;
+		    	PI_iq.out=PI_iq.integral_part;
 		    }
 			SET_BIT(TIM1->BDTR, TIM_BDTR_MOE); //enable PWM if power is wanted
 			get_standstill_position();
@@ -1739,6 +1774,10 @@ int32_t speed_to_tics(uint8_t speed) {
 
 int8_t tics_to_speed(uint32_t tics) {
 	return WHEEL_CIRCUMFERENCE * 5 * 3600 / (6 * GEAR_RATIO * tics * 10);;
+}
+
+int16_t internal_tics_to_speedx100 (uint32_t tics){
+	return WHEEL_CIRCUMFERENCE*50*3600/(6*GEAR_RATIO*tics);;
 }
 
 void calculate_tic_limits(void){
