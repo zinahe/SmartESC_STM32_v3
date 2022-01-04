@@ -114,7 +114,7 @@ uint16_t ui16_ph3_offset = 0;
 
 uint8_t ui8_KV_detect_flag=0;
 uint16_t ui16_KV_detect_counter = 0; //for getting timing of the KV detect
-int16_t ui32_KV = 0;
+static int16_t ui32_KV = 0;
 
 volatile int16_t i16_ph1_current = 0;
 volatile int16_t i16_ph2_current = 0;
@@ -351,8 +351,8 @@ void autodetect() {
 			(int16_t) (((q31_rotorposition_motor_specific >> 23) * 180) >> 8),
 			i16_hall_order, zerocrossing);
 #endif
-	ui8_KV_detect_flag=15;
-	HAL_Delay(5);
+	ui8_KV_detect_flag=25;
+	//HAL_Delay(5);
 
 
 }
@@ -555,6 +555,7 @@ int main(void) {
   		printf_("Hall_64: %d \n",	(int16_t) (((Hall_64 >> 23) * 180) >> 8));
 
   		EE_ReadVariable(EEPROM_POS_KV, &ui32_KV);
+  		printf_("KV: %d \n",ui32_KV	);
 
    	}else{
                 autodetect();
@@ -645,15 +646,16 @@ int main(void) {
 				  if(MS.u_abs>1900){
 					  ui8_KV_detect_flag=0;
 				  	  HAL_FLASH_Unlock();
-				      	  EE_WriteVariable(EEPROM_POS_KV, (int16_t) ui32_KV);
+				      	  EE_WriteVariable(EEPROM_POS_KV, (int16_t) (ui32_KV>>4));
 				      HAL_FLASH_Lock();
-				      printf_("KV_cumulated= %d,\n",ui32_KV);
+
 				  }
-				  ui32_KV -=ui32_KV>>4;
-				  ui32_KV += ((uint32_SPEEDx100_cumulated*_T))/(MS.Voltage*MS.u_q);
+				  printf_("KV_cumulated= %d,%d\n",ui32_KV>>4);
 			  }
-
-
+			  if(MS.u_q){
+				  ui32_KV -=ui32_KV>>4;
+				  ui32_KV += (uint32_SPEEDx100_cumulated)/((MS.Voltage*MS.u_q)>>(21-SPEEDFILTER)); //unit: kph*100/V
+			  }
 
 		  }//end KV detect
 
@@ -730,7 +732,10 @@ int main(void) {
 
 			MS.Temperature = adcData[ADC_TEMP] * 41 >> 8; //0.16 is calibration constant: Analog_in[10mV/°C]/ADC value. Depending on the sensor LM35)
 			MS.Voltage = q31_Battery_Voltage;
-			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",uq_cum>>8,ud_cum>>8,iq_cum>>8 , id_cum>>8,q31_tics_filtered>>3, ui8_hall_case, MS.Battery_Current,i16_hall_order , i8_recent_rotor_direction);
+//			temp1=(uint32_SPEEDx100_cumulated);
+//			temp2=((MS.Voltage*MS.u_q)>>(21-SPEEDFILTER));
+//			if(temp2)temp3=temp1/temp2;
+			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",uq_cum>>8,ud_cum>>8,iq_cum>>8 , id_cum>>8,q31_tics_filtered>>3,temp1,temp3, MS.Battery_Current, i8_recent_rotor_direction);
 			if(MS.system_state==Stop||MS.system_state==SixStep) MS.Speed=0;
 			else MS.Speed=tics_to_speed(q31_tics_filtered>>3);
 

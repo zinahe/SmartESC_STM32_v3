@@ -37,7 +37,7 @@
 #define BRAKEOFFSET 40
 #define BRAKEMAX 190
 #define WHEEL_CIRCUMFERENCE 550 //690 for original M365 motor
-#define GEAR_RATIO 24 //15 for original M365 motor
+#define GEAR_RATIO 8 //15 for original M365 motor
 
 #define SPEEDLIMIT_ECO 20
 #define SPEEDLIMIT_NORMAL 100
