@@ -163,7 +163,7 @@ q31_t q31_Battery_Voltage = 0;
 
 q31_t q31_rotorposition_absolute;
 q31_t q31_rotorposition_hall;
-q31_t q31_rotorposition_motor_specific = SPEC_ANGLE;
+
 
 q31_t q31_rotorposition_PLL = 0;
 q31_t q31_angle_per_tic = 0;
@@ -246,7 +246,7 @@ void autodetect() {
 	q31_rotorposition_absolute = 1 << 31;
 	i16_hall_order = 1;//reset hall order
 	MS.i_d_setpoint= 200; //set MS.id to appr. 2000mA
-	MS.i_q_setpoint= 0; //set MS.id to appr. 2000mA
+	MS.i_q_setpoint= 0;
 //	uint8_t zerocrossing = 0;
 //	q31_t diffangle = 0;
 	HAL_Delay(5);
@@ -318,6 +318,7 @@ void autodetect() {
     MS.i_q = 0;
     MS.u_d=0;
     MS.u_q=0;
+    MS.i_d_setpoint= 0;
     q31_tics_filtered=1000000;
 
 	HAL_FLASH_Unlock();
@@ -694,7 +695,7 @@ int main(void) {
 
 			MS.Temperature = adcData[ADC_TEMP] * 41 >> 8; //0.16 is calibration constant: Analog_in[10mV/°C]/ADC value. Depending on the sensor LM35)
 			MS.Voltage = q31_Battery_Voltage;
-			//printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",q31_tics_filtered>>3,(((q31_rotorposition_hall >> 23) * 180) >> 8) , ui8_hall_state, ui8_hall_case, MS.Battery_Current,i16_hall_order , i8_recent_rotor_direction,i8_direction,q31_angle_per_tic);
+			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",uq_cum>>8,ud_cum>>8,iq_cum>>8 , id_cum>>8,q31_tics_filtered>>3, ui8_hall_case, MS.Battery_Current,i16_hall_order , i8_recent_rotor_direction);
 			if(MS.system_state==Stop||MS.system_state==SixStep) MS.Speed=0;
 			else MS.Speed=tics_to_speed(q31_tics_filtered>>3);
 
