@@ -46,8 +46,8 @@
 #define PH_CURRENT_MAX_NORMAL 1000
 #define PH_CURRENT_MAX_SPORT 1500
 
-#define FW_CURRENT_MAX 400 //max id
-#define KV 6 //kph*10 per volt, 7 for original M365 motor
+#define FW_CURRENT_MAX 500 //max id
+
 
 #define BATTERYCURRENT_MAX 8000
 #define SPEEDFILTER 3

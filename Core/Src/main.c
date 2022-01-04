@@ -617,7 +617,7 @@ int main(void) {
 				tics_lower_limit, 0, MS.i_q_setpoint_temp); //ramp down current at speed limit
 
 		if(MS.mode==sport){//do flux weakaning
-					MS.i_d_setpoint_temp=map(MS.Speed,(KV*MS.Voltage/10000)-5,(KV*MS.Voltage/10000)+30,0,FW_CURRENT_MAX);
+					MS.i_d_setpoint_temp=-map(MS.Speed,(ui32_KV*MS.Voltage/100000)-8,(ui32_KV*MS.Voltage/100000)+30,0,FW_CURRENT_MAX);
 				}
 		else MS.i_d_setpoint_temp=0;
 
@@ -689,8 +689,7 @@ int main(void) {
 			TIM1->CCR1 = 1023; //set initial PWM values
 			TIM1->CCR2 = 1023;
 			TIM1->CCR3 = 1023;
-		    MS.i_d = 0;
-		    MS.i_q = 0;
+
 		    speed_PLL(0,0);//reset integral part
 			uint16_half_rotation_counter = 0;
 			uint16_full_rotation_counter = 0;
@@ -699,7 +698,7 @@ int main(void) {
 			i8_recent_rotor_direction = i8_direction * i8_reverse_flag;
 		    if(MS.system_state == Stop)speed_PLL(0,0);//reset integral part
 		    else {
-		    	PI_iq.integral_part = ((((uint32_SPEEDx100_cumulated*_T))/(MS.Voltage*ui32_KV))<<4)<<PI_iq.shift;
+		    	PI_iq.integral_part = ((MS.Speed<<11)*100000/(ui32_KV*MS.Voltage))<<PI_iq.shift;//((((uint32_SPEEDx100_cumulated*_T))/(MS.Voltage*ui32_KV))<<4)
 		    	PI_iq.out=PI_iq.integral_part;
 		    }
 			SET_BIT(TIM1->BDTR, TIM_BDTR_MOE); //enable PWM if power is wanted
@@ -735,7 +734,7 @@ int main(void) {
 //			temp1=(uint32_SPEEDx100_cumulated);
 //			temp2=((MS.Voltage*MS.u_q)>>(21-SPEEDFILTER));
 //			if(temp2)temp3=temp1/temp2;
-			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",uq_cum>>8,ud_cum>>8,iq_cum>>8 , id_cum>>8,q31_tics_filtered>>3,temp1,temp3, MS.Battery_Current, i8_recent_rotor_direction);
+			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",uq_cum>>8,ud_cum>>8,iq_cum>>8 , id_cum>>8,q31_tics_filtered>>3,(ui32_KV*MS.Voltage/100000),temp3, MS.Battery_Current, i8_recent_rotor_direction);
 			if(MS.system_state==Stop||MS.system_state==SixStep) MS.Speed=0;
 			else MS.Speed=tics_to_speed(q31_tics_filtered>>3);
 
