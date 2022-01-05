@@ -700,12 +700,13 @@ int main(void) {
 			__HAL_TIM_SET_COUNTER(&htim2, 0); //reset tim2 counter
 			ui16_timertics = 40000; //set interval between two hallevents to a large value
 			i8_recent_rotor_direction = i8_direction * i8_reverse_flag;
+			SET_BIT(TIM1->BDTR, TIM_BDTR_MOE); //enable PWM if power is wanted
 		    if(MS.system_state == Stop)speed_PLL(0,0);//reset integral part
-		    else {
-		    	PI_iq.integral_part = ((MS.Speed<<11)*100000/(ui32_KV*MS.Voltage))<<PI_iq.shift;//((((uint32_SPEEDx100_cumulated*_T))/(MS.Voltage*ui32_KV))<<4)
+		    else {											//(ui32_KV*MS.Voltage/100000)
+		    	PI_iq.integral_part = (((uint32_SPEEDx100_cumulated>>SPEEDFILTER)<<11)*1000/(ui32_KV*MS.Voltage))<<PI_iq.shift;//((((uint32_SPEEDx100_cumulated*_T))/(MS.Voltage*ui32_KV))<<4)
 		    	PI_iq.out=PI_iq.integral_part;
 		    }
-			SET_BIT(TIM1->BDTR, TIM_BDTR_MOE); //enable PWM if power is wanted
+
 			get_standstill_position();
 
 
@@ -735,12 +736,10 @@ int main(void) {
 
 			MS.Temperature = adcData[ADC_TEMP] * 41 >> 8; //0.16 is calibration constant: Analog_in[10mV/°C]/ADC value. Depending on the sensor LM35)
 			MS.Voltage = q31_Battery_Voltage;
-//			temp1=(uint32_SPEEDx100_cumulated);
-//			temp2=((MS.Voltage*MS.u_q)>>(21-SPEEDFILTER));
-//			if(temp2)temp3=temp1/temp2;
-			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",uq_cum>>8,ud_cum>>8,iq_cum>>8 , id_cum>>8,q31_tics_filtered>>3,(ui32_KV*MS.Voltage/100000),temp3, MS.Battery_Current, i8_recent_rotor_direction);
-			if(MS.system_state==Stop||MS.system_state==SixStep) MS.Speed=0;
-			else MS.Speed=tics_to_speed(q31_tics_filtered>>3);
+
+			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",(((uint32_SPEEDx100_cumulated>>SPEEDFILTER)<<11)*1000/(ui32_KV*MS.Voltage)),PI_iq.out>>PI_iq.shift,PI_iq.recent_value-PI_iq.setpoint,uq_cum>>8,ud_cum>>8,iq_cum>>8 , id_cum>>8,q31_tics_filtered>>3, MS.Battery_Current);
+
+			MS.Speed=tics_to_speed(q31_tics_filtered>>3);
 
 			if (!MS.i_q_setpoint&&(uint16_full_rotation_counter > 7999
 					|| uint16_half_rotation_counter > 7999)
