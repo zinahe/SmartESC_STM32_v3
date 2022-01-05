@@ -34,7 +34,7 @@ q31_t e_log[300][6];
 
 q31_t z;
 char Obs_flag = 1;
-uint8_t ui8_debug_state = 0;
+uint8_t ui8_debug_state = 4;
 
 char PI_flag = 0;
 
@@ -68,8 +68,8 @@ void FOC_calculation(int16_t int16_i_as, int16_t int16_i_bs, q31_t q31_teta,
 	arm_sin_cos_q31(q31_teta, &sinevalue, &cosinevalue);
 	if(sinevalue==-2147483648)sinevalue=-2147483647;
 	if(cosinevalue==2147483648)cosinevalue=2147483647;
-	temp3=sinevalue;
-	temp4=cosinevalue;
+	//temp3=sinevalue;
+	//temp4=cosinevalue;
 
 	// Park transformation
 	arm_park_q31(q31_i_alpha, q31_i_beta, &q31_i_d, &q31_i_q, sinevalue,
@@ -104,16 +104,16 @@ void FOC_calculation(int16_t int16_i_as, int16_t int16_i_bs, q31_t q31_teta,
 	//inverse Park transformation
 	arm_inv_park_q31(MS_FOC->u_d, MS_FOC->u_q, &q31_u_alpha, &q31_u_beta,
 			-sinevalue, cosinevalue);
-	temp5=q31_u_alpha;
-	temp6=q31_u_beta;
+	//temp5=q31_u_alpha;
+	//temp6=q31_u_beta;
 
 #ifdef FAST_LOOP_LOG
-//	temp1=int16_i_as;
-//	temp2=int16_i_bs;
-//	temp3=MS_FOC->i_d;
-//	temp4=MS_FOC->i_q;
-//	temp5=MS_FOC->u_d;
-//	temp6=MS_FOC->u_q;
+	temp1=MS_FOC->i_q_setpoint;
+//	temp2=MS_FOC->
+	temp3=MS_FOC->i_d;
+	temp4=MS_FOC->i_q;
+	temp5=MS_FOC->u_d;
+	temp6=MS_FOC->u_q;
 
 	if(ui8_debug_state==0)
 			{
@@ -162,6 +162,7 @@ q31_t PI_control (PI_control_t* PI_c)
   if (PI_c->out>PI_c->limit_output << PI_c->shift) PI_c->out = PI_c->limit_output<< PI_c->shift;
   if (PI_c->out<-(PI_c->limit_output << PI_c->shift)) PI_c->out = -(PI_c->limit_output<< PI_c->shift); // allow no negative voltage.
   if(!READ_BIT(TIM1->BDTR, TIM_BDTR_MOE))PI_c->out = 0 ; //reset output if PWM is disabled
+
 
   return (PI_c->out>>PI_c->shift);
 }

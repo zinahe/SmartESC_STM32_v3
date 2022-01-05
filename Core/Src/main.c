@@ -596,7 +596,7 @@ int main(void) {
 			k++;
 			if (k>299){
 				k=0;
-				ui8_debug_state=0;
+				ui8_debug_state=4;
 				//Obs_flag=0;
 			}
 		}
@@ -694,15 +694,16 @@ int main(void) {
 			TIM1->CCR2 = 1023;
 			TIM1->CCR3 = 1023;
 
-		    speed_PLL(0,0);//reset integral part
+
 			uint16_half_rotation_counter = 0;
 			uint16_full_rotation_counter = 0;
 			__HAL_TIM_SET_COUNTER(&htim2, 0); //reset tim2 counter
 			ui16_timertics = 40000; //set interval between two hallevents to a large value
 			i8_recent_rotor_direction = i8_direction * i8_reverse_flag;
 			SET_BIT(TIM1->BDTR, TIM_BDTR_MOE); //enable PWM if power is wanted
+			ui8_debug_state=0;//Start fast logging
 		    if(MS.system_state == Stop)speed_PLL(0,0);//reset integral part
-		    else {											//(ui32_KV*MS.Voltage/100000)
+		    else {
 		    	PI_iq.integral_part = (((uint32_SPEEDx100_cumulated>>SPEEDFILTER)<<11)*1000/(ui32_KV*MS.Voltage))<<PI_iq.shift;//((((uint32_SPEEDx100_cumulated*_T))/(MS.Voltage*ui32_KV))<<4)
 		    	PI_iq.out=PI_iq.integral_part;
 		    }
@@ -719,6 +720,7 @@ int main(void) {
                   }
 #endif
 		}
+
 
 		if (i8_slow_loop_flag) {
        i8_slow_loop_flag = 0;
@@ -737,18 +739,23 @@ int main(void) {
 			MS.Temperature = adcData[ADC_TEMP] * 41 >> 8; //0.16 is calibration constant: Analog_in[10mV/°C]/ADC value. Depending on the sensor LM35)
 			MS.Voltage = q31_Battery_Voltage;
 
-			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",(((uint32_SPEEDx100_cumulated>>SPEEDFILTER)<<11)*1000/(ui32_KV*MS.Voltage)),PI_iq.out>>PI_iq.shift,PI_iq.recent_value-PI_iq.setpoint,uq_cum>>8,ud_cum>>8,iq_cum>>8 , id_cum>>8,q31_tics_filtered>>3, MS.Battery_Current);
+			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",(((uint32_SPEEDx100_cumulated>>SPEEDFILTER)<<11)*1000/(ui32_KV*MS.Voltage)),PI_iq.out>>PI_iq.shift,q31_angle_per_tic,uq_cum>>8,ud_cum>>8,iq_cum>>8 , id_cum>>8,q31_tics_filtered>>3, MS.Battery_Current);
 
 			MS.Speed=tics_to_speed(q31_tics_filtered>>3);
 
 			if (!MS.i_q_setpoint&&(uint16_full_rotation_counter > 7999
-					|| uint16_half_rotation_counter > 7999)
-					&& READ_BIT(TIM1->BDTR, TIM_BDTR_MOE)) {
-				CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE); //Disable PWM if motor is not turning
+					|| uint16_half_rotation_counter > 7999))
+					  {
+				if(READ_BIT(TIM1->BDTR, TIM_BDTR_MOE)){
+					CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE); //Disable PWM if motor is not turning
+					ui8_debug_state=4;//Reset fast loop logging
+					get_standstill_position();
+				}
+
 				MS.system_state=Stop;
-				get_standstill_position();
-				//printf_("shutdown %d\n", q31_rotorposition_absolute);
 			}
+			else if(ui8_6step_flag) MS.system_state = SixStep;
+
 
 #if (DISPLAY_TYPE == DISPLAY_TYPE_DEBUG && !defined(FAST_LOOP_LOG))
                 //Jon Pry uses this crazy string for automated data collection
@@ -1292,6 +1299,12 @@ static void MX_GPIO_Init(void) {
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim3) {
+
+#ifdef SPEED_PLL
+		//keep q31_rotorposition_PLL updated when PWM is off
+		   if(!READ_BIT(TIM1->BDTR, TIM_BDTR_MOE))q31_rotorposition_PLL += (q31_angle_per_tic<<1);
+#endif
+
 		i8_slow_loop_flag = 1;
 		if (ui32_tim3_counter < 32000)
 			ui32_tim3_counter++;
@@ -1402,7 +1415,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc) {
 		  // temp4=q31_angle_per_tic*ui16_timertics;
 #endif
 
-		   temp1=(((q31_rotorposition_PLL >> 23) * 180) >> 8);
+		  // temp1=(((q31_rotorposition_PLL >> 23) * 180) >> 8);
 			if (ui16_tim2_recent < ui16_timertics+(ui16_timertics>>2) && !ui8_overflow_flag && !ui8_6step_flag) { //prevent angle running away at standstill
 #ifdef SPEED_PLL
 			q31_rotorposition_absolute=q31_rotorposition_PLL;
@@ -1422,7 +1435,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc) {
 
 			}
 		} //end if hall angle detect
-		temp2=(((q31_rotorposition_absolute >> 23) * 180) >> 8);
+		//temp2=(((q31_rotorposition_absolute >> 23) * 180) >> 8);
 		__enable_irq(); //EXIT CRITICAL SECTION!!!!!!!!!!!!!!
 
 #ifndef DISABLE_DYNAMIC_ADC
@@ -1811,8 +1824,6 @@ q31_t speed_PLL(q31_t actual, q31_t target) {
 
   if (!actual&&!target)q31_d_i=0;
 
-  // if PWM is disabled, reset q31_d_i
-  if (!READ_BIT(TIM1->BDTR, TIM_BDTR_MOE)) q31_d_i = 0;
 
   return q31_d_dc;
 }
