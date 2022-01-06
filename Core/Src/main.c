@@ -759,7 +759,7 @@ int main(void) {
 			MS.Temperature = adcData[ADC_TEMP] * 41 >> 8; //0.16 is calibration constant: Analog_in[10mV/°C]/ADC value. Depending on the sensor LM35)
 			MS.Voltage = q31_Battery_Voltage;
 
-			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",(((uint32_SPEEDx100_cumulated>>SPEEDFILTER)<<11)*1000/(ui32_KV*MS.Voltage)),PI_iq.out>>PI_iq.shift,q31_angle_per_tic,uq_cum>>8,ud_cum>>8,iq_cum>>8 , id_cum>>8,q31_tics_filtered>>3, MS.Battery_Current);
+			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",(((uint32_SPEEDx100_cumulated>>SPEEDFILTER)<<11)*1000/(ui32_KV*MS.Voltage)),PI_iq.out>>PI_iq.shift,q31_angle_per_tic,uq_cum>>8,ud_cum>>8,iq_cum>>8 , id_cum>>8,MS.system_state, MS.Battery_Current);
 
 			MS.Speed=tics_to_speed(q31_tics_filtered>>3);
 
@@ -770,6 +770,7 @@ int main(void) {
 					CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE); //Disable PWM if motor is not turning
 					ui8_debug_state=4;//Reset fast loop logging
 					get_standstill_position();
+					MS.Speed=0;
 				}
 
 				MS.system_state=Stop;
