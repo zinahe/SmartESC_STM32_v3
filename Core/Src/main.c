@@ -112,7 +112,7 @@ uint16_t ui16_ph1_offset = 0;
 uint16_t ui16_ph2_offset = 0;
 uint16_t ui16_ph3_offset = 0;
 
-uint8_t ui8_KV_detect_flag=0;
+
 uint16_t ui16_KV_detect_counter = 0; //for getting timing of the KV detect
 static int16_t ui32_KV = 0;
 
@@ -351,7 +351,8 @@ void autodetect() {
 			(int16_t) (((q31_rotorposition_motor_specific >> 23) * 180) >> 8),
 			i16_hall_order, zerocrossing);
 #endif
-	ui8_KV_detect_flag=20;
+	ui16_KV_detect_counter=HAL_GetTick();
+	MS.KV_detect_flag=100;
 	//HAL_Delay(5);
 
 
@@ -394,12 +395,13 @@ int main(void) {
 
 	//initialize MS struct.
 	MS.hall_angle_detect_flag = 1;
+	MS.KV_detect_flag=0;
 	MS.Speed = 128000;
 	MS.assist_level = 1;
 	MS.regen_level = 7;
 	MS.i_q_setpoint = 0;
 	MS.i_d_setpoint = 0;
-
+	MS.angle_est=SPEED_PLL;
 	MS.phase_current_limit  =PH_CURRENT_MAX_NORMAL;
 	MS.speed_limit = SPEEDLIMIT_NORMAL;
 
@@ -637,29 +639,46 @@ int main(void) {
 			}
 		}
 
-		  if(ui8_KV_detect_flag){
-				MS.i_q_setpoint=ui8_KV_detect_flag;;
-				MS.i_d_setpoint=0;
+		  if(MS.KV_detect_flag){
+			static  int8_t dir=1;
+			static  uint16_t KVtemp;
+			MS.i_q_setpoint=1;
+			MS.angle_est=0;//switch to angle extrapolation
 			  if(MS.u_q){
 					  ui32_KV -=ui32_KV>>4;
 					  ui32_KV += (uint32_SPEEDx100_cumulated)/((MS.Voltage*MS.u_q)>>(21-SPEEDFILTER)); //unit: kph*100/V
 				  }
-			  if(HAL_GetTick()-ui16_KV_detect_counter>1000){
-				  ui8_KV_detect_flag++;
-				  printf_("KV_cumulated= %d,%d\n",ui32_KV>>4);
-				  ui16_KV_detect_counter=HAL_GetTick();
-				  if(MS.u_abs>1900){
-					  ui8_KV_detect_flag=0;
-					  ui32_KV=ui32_KV>>4;
-				  	  HAL_FLASH_Unlock();
-				      	  EE_WriteVariable(EEPROM_POS_KV, (int16_t) (ui32_KV));
-				      HAL_FLASH_Lock();
-
-				  }
-
+			  if(ui16_KV_detect_counter>200){
+				  MS.KV_detect_flag +=10*dir;
+				  printf_("KV_cumulated= %d,%d\n",ui32_KV>>4,MS.u_q);
+				  ui16_KV_detect_counter=0;
 
 			  }
+			  if(MS.u_q>1900){
+				  KVtemp=ui32_KV>>4;
+			      dir=-1;
+			  }
 
+			  if(MS.KV_detect_flag<100){
+				  dir=1;
+				  MS.i_q_setpoint=0;
+				  CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE); //Disable PWM
+				  MS.angle_est=SPEED_PLL;//switch back to config setting
+				  MS.KV_detect_flag=0;
+				  printf_("KV detection finished!%d\n",KVtemp);
+			  	  HAL_FLASH_Unlock();
+			      	  EE_WriteVariable(EEPROM_POS_KV, (int16_t) (KVtemp));
+			      HAL_FLASH_Lock();
+			  }
+			  if(abs(MS.i_q>300)){
+
+				  MS.i_q_setpoint=0;
+				  CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE); //Disable PWM
+				  MS.KV_detect_flag=0;
+				  MS.angle_est=SPEED_PLL;//switch back to config setting
+				  printf_("KV_detection aborted due to overcurrent\n");
+
+			  }
 
 		  }//end KV detect
 
@@ -1300,10 +1319,11 @@ static void MX_GPIO_Init(void) {
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim == &htim3) {
 
-#ifdef SPEED_PLL
+		if(MS.angle_est){
 		//keep q31_rotorposition_PLL updated when PWM is off
 		   if(!READ_BIT(TIM1->BDTR, TIM_BDTR_MOE))q31_rotorposition_PLL += (q31_angle_per_tic<<1);
-#endif
+		}
+		if(MS.KV_detect_flag)ui16_KV_detect_counter++;
 
 		i8_slow_loop_flag = 1;
 		if (ui32_tim3_counter < 32000)
@@ -1410,23 +1430,21 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc) {
 			if(ui16_timertics>(SIXSTEPTHRESHOLD*6)>>2)ui8_6step_flag=1;
 
 
-#ifdef SPEED_PLL
-		   q31_rotorposition_PLL += q31_angle_per_tic;
-		  // temp4=q31_angle_per_tic*ui16_timertics;
-#endif
-
-		  // temp1=(((q31_rotorposition_PLL >> 23) * 180) >> 8);
+			if(MS.angle_est){
+				q31_rotorposition_PLL += q31_angle_per_tic;
+			}
 			if (ui16_tim2_recent < ui16_timertics+(ui16_timertics>>2) && !ui8_overflow_flag && !ui8_6step_flag) { //prevent angle running away at standstill
-#ifdef SPEED_PLL
-			q31_rotorposition_absolute=q31_rotorposition_PLL;
-			MS.system_state=PLL;
-#else
+				if(MS.angle_est){
+					q31_rotorposition_absolute=q31_rotorposition_PLL;
+					MS.system_state=PLL;
+				}
+			else{
 				q31_rotorposition_absolute = q31_rotorposition_hall
 						+ (q31_t) (i16_hall_order * i8_recent_rotor_direction
 								* ((10923 * ui16_tim2_recent) / ui16_timertics)
 								<< 16); //interpolate angle between two hallevents by scaling timer2 tics, 10923<<16 is 715827883 = 60�
 				MS.system_state=Interpolation;
-#endif
+				}
 			} else {
 				ui8_overflow_flag = 1;
 				q31_rotorposition_absolute = q31_rotorposition_hall-i8_direction*357913941;//offset of 30 degree to get the middle of the sector
@@ -1568,10 +1586,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
 		} // end case
 
-#ifdef SPEED_PLL
-		q31_angle_per_tic = speed_PLL(q31_rotorposition_PLL,q31_rotorposition_hall);
-
-#endif
+		if(MS.angle_est){
+			q31_angle_per_tic = speed_PLL(q31_rotorposition_PLL,q31_rotorposition_hall);
+		}
 
 	} //end if
 }
@@ -1848,6 +1865,7 @@ void Error_Handler(void) {
 	/* User can add his own implementation to report the HAL error return state */
 	__disable_irq();
 	while (1) {
+		CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE); //Disable PWM
 	}
 	/* USER CODE END Error_Handler_Debug */
 }
@@ -1856,6 +1874,7 @@ void _Error_Handler(char *file, int line) {
 	/* USER CODE BEGIN Error_Handler_Debug */
 	/* User can add his own implementation to report the HAL error return state */
 	while (1) {
+		CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE); //Disable PWM
 	}
 	/* USER CODE END Error_Handler_Debug */
 }

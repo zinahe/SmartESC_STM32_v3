@@ -144,7 +144,8 @@ typedef struct {
 	uint8_t shutdown;
 	int8_t speed_limit;
 	int16_t phase_current_limit;
-
+	int8_t angle_est;
+	int16_t KV_detect_flag;
 
 } MotorState_t;
 
