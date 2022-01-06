@@ -643,7 +643,7 @@ int main(void) {
 			static  int8_t dir=1;
 			static  uint16_t KVtemp;
 			MS.i_q_setpoint=1;
-			i8_direction=1;
+			i8_direction=-1;
 			MS.angle_est=0;//switch to angle extrapolation
 			  if(MS.u_q){
 					  ui32_KV -=ui32_KV>>4;
