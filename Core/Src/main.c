@@ -190,7 +190,7 @@ uint16_t VirtAddVarTab[NB_OF_VAR] = { 	EEPROM_POS_HALL_ORDER,
 										EEPROM_POS_HALL_26,
 										EEPROM_POS_HALL_64
 									};
-enum{Stop, SixStep, Interpolation, PLL};
+enum{Stop, SixStep, Interpolation, PLL, IdleRun};
 q31_t switchtime[3];
 volatile uint16_t adcData[8]; //Buffer for ADC1 Input
 
@@ -764,18 +764,17 @@ int main(void) {
 			MS.Speed=tics_to_speed(q31_tics_filtered>>3);
 
 			if (!MS.i_q_setpoint&&(uint16_full_rotation_counter > 7999
-					|| uint16_half_rotation_counter > 7999))
-					  {
+					|| uint16_half_rotation_counter > 7999)) {
 				if(READ_BIT(TIM1->BDTR, TIM_BDTR_MOE)){
 					CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE); //Disable PWM if motor is not turning
 					ui8_debug_state=4;//Reset fast loop logging
 					get_standstill_position();
-					MS.Speed=0;
-				}
 
+				}
+				MS.Speed=0;
 				MS.system_state=Stop;
 			}
-			else if(ui8_6step_flag) MS.system_state = SixStep;
+
 
 
 #if (DISPLAY_TYPE == DISPLAY_TYPE_DEBUG && !defined(FAST_LOOP_LOG))
@@ -1515,7 +1514,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 			ui8_overflow_flag = 0;
 
 		}
-
+		if(ui16_timertics<(SIXSTEPTHRESHOLD<<2)&&!READ_BIT(TIM1->BDTR, TIM_BDTR_MOE)) MS.system_state=IdleRun;
 		switch (ui8_hall_case) //12 cases for each transition from one stage to the next. 6x forward, 6x reverse
 		{
 		//6 cases for forward direction
