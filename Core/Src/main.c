@@ -352,7 +352,7 @@ void autodetect() {
 			i16_hall_order, zerocrossing);
 #endif
 	ui16_KV_detect_counter=HAL_GetTick();
-	MS.KV_detect_flag=100;
+	MS.KV_detect_flag=20;
 	//HAL_Delay(5);
 
 
@@ -643,6 +643,7 @@ int main(void) {
 			static  int8_t dir=1;
 			static  uint16_t KVtemp;
 			MS.i_q_setpoint=1;
+
 			MS.angle_est=0;//switch to angle extrapolation
 			  if(MS.u_q){
 					  ui32_KV -=ui32_KV>>4;
@@ -659,10 +660,11 @@ int main(void) {
 			      dir=-1;
 			  }
 
-			  if(MS.KV_detect_flag<100){
+			  if(MS.KV_detect_flag<20){
 				  dir=1;
 				  MS.i_q_setpoint=0;
 				  ui32_KV=KVtemp;
+
 				  CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE); //Disable PWM
 				  MS.angle_est=SPEED_PLL;//switch back to config setting
 				  MS.KV_detect_flag=0;
@@ -1448,7 +1450,8 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc) {
 				}
 			} else {
 				ui8_overflow_flag = 1;
-				q31_rotorposition_absolute = q31_rotorposition_hall-i8_direction*357913941;//offset of 30 degree to get the middle of the sector
+				if(MS.KV_detect_flag)q31_rotorposition_absolute = q31_rotorposition_hall;
+				else q31_rotorposition_absolute = q31_rotorposition_hall-i8_direction*357913941;//offset of 30 degree to get the middle of the sector
 				MS.system_state=SixStep;
 					//	}
 
