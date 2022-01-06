@@ -662,6 +662,7 @@ int main(void) {
 			  if(MS.KV_detect_flag<100){
 				  dir=1;
 				  MS.i_q_setpoint=0;
+				  ui32_KV=KVtemp;
 				  CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE); //Disable PWM
 				  MS.angle_est=SPEED_PLL;//switch back to config setting
 				  MS.KV_detect_flag=0;
