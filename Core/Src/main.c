@@ -643,7 +643,7 @@ int main(void) {
 			static  int8_t dir=1;
 			static  uint16_t KVtemp;
 			MS.i_q_setpoint=1;
-
+			i8_direction=1;
 			MS.angle_est=0;//switch to angle extrapolation
 			  if(MS.u_q){
 					  ui32_KV -=ui32_KV>>4;
@@ -668,6 +668,7 @@ int main(void) {
 				  CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE); //Disable PWM
 				  MS.angle_est=SPEED_PLL;//switch back to config setting
 				  MS.KV_detect_flag=0;
+				  i8_direction=REVERSE;
 				  printf_("KV detection finished!%d\n",KVtemp);
 			  	  HAL_FLASH_Unlock();
 			      	  EE_WriteVariable(EEPROM_POS_KV, (int16_t) (KVtemp));
