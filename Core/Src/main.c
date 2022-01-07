@@ -1445,7 +1445,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc) {
 				}
 			else{
 				q31_rotorposition_absolute = q31_rotorposition_hall
-						+ (q31_t) (i16_hall_order * i8_recent_rotor_direction
+						+ (q31_t) (i8_recent_rotor_direction
 								* ((10923 * ui16_tim2_recent) / ui16_timertics)
 								<< 16); //interpolate angle between two hallevents by scaling timer2 tics, 10923<<16 is 715827883 = 60�
 				MS.system_state=Interpolation;
