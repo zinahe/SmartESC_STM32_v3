@@ -527,7 +527,7 @@ int main(void) {
        // autodetect();
 
    	EE_ReadVariable(EEPROM_POS_HALL_ORDER, &i16_hall_order);
- 
+   	printf_("Hall_Order: %d \n",i16_hall_order);
    	// set varaiables to value from emulated EEPROM only if valid
    	if(i16_hall_order!=0xFFFF) {
    		int16_t temp;
@@ -630,12 +630,12 @@ int main(void) {
 
 		if(MS.hall_angle_detect_flag){ //run only, if autodetect is not active
 			if (MS.i_setpoint_abs > MS.phase_current_limit) {
-				MS.i_q_setpoint = (MS.i_q_setpoint_temp * MS.phase_current_limit) / MS.i_setpoint_abs; //division!
+				MS.i_q_setpoint = i8_direction* (MS.i_q_setpoint_temp * MS.phase_current_limit) / MS.i_setpoint_abs; //division!
 				MS.i_d_setpoint = (MS.i_d_setpoint_temp * MS.phase_current_limit) / MS.i_setpoint_abs; //division!
 				MS.i_setpoint_abs = MS.phase_current_limit;
 			} else {
-				MS.i_q_setpoint=MS.i_q_setpoint_temp;
-				MS.i_d_setpoint=MS.i_d_setpoint_temp;
+				MS.i_q_setpoint= i8_direction*MS.i_q_setpoint_temp;
+				MS.i_d_setpoint= MS.i_d_setpoint_temp;
 			}
 		}
 
@@ -645,7 +645,7 @@ int main(void) {
 			MS.i_q_setpoint=1;
 			i8_direction=-1;
 			MS.angle_est=0;//switch to angle extrapolation
-			  if(MS.u_q){
+			  if(((MS.Voltage*MS.u_q)>>(21-SPEEDFILTER))){
 					  ui32_KV -=ui32_KV>>4;
 					  ui32_KV += (uint32_SPEEDx100_cumulated)/((MS.Voltage*MS.u_q)>>(21-SPEEDFILTER)); //unit: kph*100/V
 				  }
