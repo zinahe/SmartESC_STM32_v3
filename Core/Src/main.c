@@ -557,6 +557,7 @@ int main(void) {
   		printf_("Hall_64: %d \n",	(int16_t) (((Hall_64 >> 23) * 180) >> 8));
 
   		EE_ReadVariable(EEPROM_POS_KV, &ui32_KV);
+  		if(!ui32_KV)ui32_KV=111;
   		printf_("KV: %d \n",ui32_KV	);
 
    	}else{
@@ -643,7 +644,7 @@ int main(void) {
 			static  int8_t dir=1;
 			static  uint16_t KVtemp;
 			MS.i_q_setpoint=1;
-			i8_direction=-1;
+
 			MS.angle_est=0;//switch to angle extrapolation
 			  if(((MS.Voltage*MS.u_q)>>(21-SPEEDFILTER))){
 					  ui32_KV -=ui32_KV>>4;
@@ -668,7 +669,7 @@ int main(void) {
 				  CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE); //Disable PWM
 				  MS.angle_est=SPEED_PLL;//switch back to config setting
 				  MS.KV_detect_flag=0;
-				  i8_direction=REVERSE;
+
 				  printf_("KV detection finished!%d\n",KVtemp);
 			  	  HAL_FLASH_Unlock();
 			      	  EE_WriteVariable(EEPROM_POS_KV, (int16_t) (KVtemp));
@@ -762,7 +763,7 @@ int main(void) {
 			MS.Temperature = adcData[ADC_TEMP] * 41 >> 8; //0.16 is calibration constant: Analog_in[10mV/°C]/ADC value. Depending on the sensor LM35)
 			MS.Voltage = q31_Battery_Voltage;
 
-			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",(((uint32_SPEEDx100_cumulated>>SPEEDFILTER)<<11)*1000/(ui32_KV*MS.Voltage)),PI_iq.out>>PI_iq.shift,q31_angle_per_tic,uq_cum>>8,ud_cum>>8,iq_cum>>8 , id_cum>>8,MS.system_state, MS.Battery_Current);
+			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n",ui8_hall_case,MS.i_q_setpoint,q31_angle_per_tic,uq_cum>>8,ud_cum>>8,iq_cum>>8 , id_cum>>8,MS.system_state, MS.Battery_Current);
 
 			MS.Speed=tics_to_speed(q31_tics_filtered>>3);
 
