@@ -136,14 +136,15 @@ typedef struct {
 	uint8_t regen_level;
 	int8_t Temperature;
 	int8_t system_state;
-	int8_t mode;
+
 	int8_t error_state;
 	bool light;
 	bool beep;
 	bool brake_active;
 	uint8_t shutdown;
-	int8_t speed_limit;
-	int16_t phase_current_limit;
+	int8_t mode;
+
+
 	int8_t angle_est;
 	int16_t KV_detect_flag;
 
@@ -164,8 +165,10 @@ typedef struct {
 	uint16_t gear_ratio;
 	uint8_t speedLimit;
 	uint8_t pulses_per_revolution;
-	uint16_t phase_current_max;
-	int16_t spec_angle;
+	int16_t phase_current_limit;
+	int16_t regen_current;
+	int8_t speed_limit;
+
 
 } MotorParams_t;
 

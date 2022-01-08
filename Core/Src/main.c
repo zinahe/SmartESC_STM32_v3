@@ -203,6 +203,8 @@ q31_t Hall_64 = 0;
 q31_t Hall_51 = 0;
 q31_t Hall_45 = 0;
 
+const uint16_t fw_current_max = FW_CURRENT_MAX/CAL_I;
+
 static q31_t tics_lower_limit;
 static q31_t tics_higher_limit;
 q31_t q31_tics_filtered = 128000;
@@ -402,8 +404,11 @@ int main(void) {
 	MS.i_q_setpoint = 0;
 	MS.i_d_setpoint = 0;
 	MS.angle_est=SPEED_PLL;
-	MS.phase_current_limit  =PH_CURRENT_MAX_NORMAL;
-	MS.speed_limit = SPEEDLIMIT_NORMAL;
+
+	MP.speed_limit = SPEEDLIMIT_NORMAL;
+
+	MP.regen_current= REGEN_CURRENT/CAL_I;
+	MP.phase_current_limit  =PH_CURRENT_MAX_NORMAL/CAL_I;
 
 	  //init PI structs
 	  PI_id.gain_i=I_FACTOR_I_D;
@@ -585,7 +590,7 @@ int main(void) {
 		//display message processing
 #if (DISPLAY_TYPE == DISPLAY_TYPE_M365DASHBOARD)
 		search_DashboardMessage(&MS, &MP, huart1);
-		checkButton(&MS);
+		checkButton(&MP, &MS);
 #endif
 
 #if (defined(FAST_LOOP_LOG))
@@ -611,16 +616,16 @@ int main(void) {
 		MS.i_q_setpoint=map(ui16_reg_adc_value,THROTTLEOFFSET,THROTTLEMAX,0,MS.phase_current_limit);
 #endif
 
-		if (MS.i_q_setpoint_temp > MS.phase_current_limit)
-			MS.i_q_setpoint_temp = MS.phase_current_limit;
-		if (MS.i_q_setpoint_temp < -MS.phase_current_limit)
-			MS.i_q_setpoint_temp = -MS.phase_current_limit;
+		if (MS.i_q_setpoint_temp > MP.phase_current_limit)
+			MS.i_q_setpoint_temp = MP.phase_current_limit;
+		if (MS.i_q_setpoint_temp < -MP.phase_current_limit)
+			MS.i_q_setpoint_temp = -MP.phase_current_limit;
 
 		MS.i_q_setpoint_temp = map(q31_tics_filtered >> 3, tics_higher_limit,
 				tics_lower_limit, 0, MS.i_q_setpoint_temp); //ramp down current at speed limit
 
 		if(MS.mode==sport){//do flux weakaning
-					MS.i_d_setpoint_temp=-map(MS.Speed,(ui32_KV*MS.Voltage/100000)-8,(ui32_KV*MS.Voltage/100000)+30,0,FW_CURRENT_MAX);
+					MS.i_d_setpoint_temp=-map(MS.Speed,(ui32_KV*MS.Voltage/100000)-8,(ui32_KV*MS.Voltage/100000)+30,0,fw_current_max);
 				}
 		else MS.i_d_setpoint_temp=0;
 
@@ -630,10 +635,10 @@ int main(void) {
 		MS.i_setpoint_abs = (MS.i_setpoint_abs>>16)+1;
 
 		if(MS.hall_angle_detect_flag){ //run only, if autodetect is not active
-			if (MS.i_setpoint_abs > MS.phase_current_limit) {
-				MS.i_q_setpoint = i8_direction* (MS.i_q_setpoint_temp * MS.phase_current_limit) / MS.i_setpoint_abs; //division!
-				MS.i_d_setpoint = (MS.i_d_setpoint_temp * MS.phase_current_limit) / MS.i_setpoint_abs; //division!
-				MS.i_setpoint_abs = MS.phase_current_limit;
+			if (MS.i_setpoint_abs > MP.phase_current_limit) {
+				MS.i_q_setpoint = i8_direction* (MS.i_q_setpoint_temp * MP.phase_current_limit) / MS.i_setpoint_abs; //division!
+				MS.i_d_setpoint = (MS.i_d_setpoint_temp * MP.phase_current_limit) / MS.i_setpoint_abs; //division!
+				MS.i_setpoint_abs = MP.phase_current_limit;
 			} else {
 				MS.i_q_setpoint= i8_direction*MS.i_q_setpoint_temp;
 				MS.i_d_setpoint= MS.i_d_setpoint_temp;
@@ -1825,9 +1830,9 @@ int16_t internal_tics_to_speedx100 (uint32_t tics){
 
 void calculate_tic_limits(void){
 	tics_lower_limit = WHEEL_CIRCUMFERENCE * 5 * 3600
-			/ (6 * GEAR_RATIO * MS.speed_limit * 10); //tics=wheelcirc*timerfrequency/(no. of hallevents per rev*gear-ratio*speedlimit)*3600/1000000
+			/ (6 * GEAR_RATIO * MP.speed_limit * 10); //tics=wheelcirc*timerfrequency/(no. of hallevents per rev*gear-ratio*speedlimit)*3600/1000000
 	tics_higher_limit = WHEEL_CIRCUMFERENCE * 5 * 3600
-			/ (6 * GEAR_RATIO * (MS.speed_limit + 2) * 10);
+			/ (6 * GEAR_RATIO * (MP.speed_limit + 2) * 10);
 
 }
 

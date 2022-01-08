@@ -91,7 +91,7 @@ eButtonEvent getButtonEvent()
     return button_event ;
 }
 
-void checkButton(MotorState_t *MS) {
+void checkButton(MotorParams_t *MP,MotorState_t *MS) {
 	/* Infinite loop */
 	  if(MS->shutdown>16) power_control(DEV_PWR_OFF);
 	  if(main_loop_counter > 25){
@@ -116,7 +116,7 @@ void checkButton(MotorState_t *MS) {
 					 // commands_printf("DOUBLE_PRESS");
 					  MS->mode=MS->mode+2;
 					  if(MS->mode>4)MS->mode=0;
-					  set_mode(MS);
+					  set_mode(MP,MS);
 				  } break ;
 			 }
 		}
@@ -163,22 +163,22 @@ void power_control(uint8_t pwr)
 	}
 }
 
-void set_mode(MotorState_t *MS){
+void set_mode(MotorParams_t *MP, MotorState_t *MS){
 
 	switch( MS->mode){
 		case eco :{
-			MS->phase_current_limit=PH_CURRENT_MAX_ECO;
-			MS->speed_limit=SPEEDLIMIT_ECO;
+			MP->phase_current_limit=PH_CURRENT_MAX_ECO/CAL_I;
+			MP->speed_limit=SPEEDLIMIT_ECO;
 
 			} break ;
 		case normal :{
-			MS->phase_current_limit=PH_CURRENT_MAX_NORMAL;
-			MS->speed_limit=SPEEDLIMIT_NORMAL;
+			MP->phase_current_limit=PH_CURRENT_MAX_NORMAL/CAL_I;
+			MP->speed_limit=SPEEDLIMIT_NORMAL;
 
 			} break ;
 		case sport :{
-			MS->phase_current_limit=PH_CURRENT_MAX_SPORT;
-			MS->speed_limit=SPEEDLIMIT_SPORT;
+			MP->phase_current_limit=PH_CURRENT_MAX_SPORT/CAL_I;
+			MP->speed_limit=SPEEDLIMIT_SPORT;
 
 			} break ;
 

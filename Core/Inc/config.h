@@ -8,60 +8,68 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 #include "stdint.h"
+
+//Dangerzone, do not touch!!
 #define DISPLAY_TYPE_M365DASHBOARD (1<<1)
 #define DISPLAY_TYPE_DEBUG (1<<0)							// For ASCII-Output in Debug mode);
 
 #define TRIGGER_OFFSET_ADC 50
 #define TRIGGER_DEFAULT 2020
 #define _T 2028
-#define CAL_BAT_V 14
-#define CAL_V 25
-#define CAL_I 38
-#define INDUCTANCE 6LL
-#define RESISTANCE 40LL
-#define FLUX_LINKAGE 1200LL
-#define GAMMA 9LL
-#define BATTERY_LEVEL_1 323000
-#define BATTERY_LEVEL_2 329000
-#define BATTERY_LEVEL_3 344000
-#define BATTERY_LEVEL_4 368000
-#define BATTERY_LEVEL_5 380000
+
+#define SPEEDFILTER 3
+
+//#define ADCTHROTTLE
+//#define FAST_LOOP_LOG
+//#define DISABLE_DYNAMIC_ADC
+
+// choose your display here
+#define DISPLAY_TYPE DISPLAY_TYPE_M365DASHBOARD
+
+// calibration factors for voltage and current
+#define CAL_BAT_V 14 	// ADC counts * CAL_BAT_V = Battery voltage in mV
+#define CAL_I 38		// ADC counts * CAL_I = current in mA
+
+// gains for PI controls
 #define P_FACTOR_I_Q 100
 #define I_FACTOR_I_Q 2
 #define P_FACTOR_I_D 100
 #define I_FACTOR_I_D 10
-#define MAX_D_FACTOR 1
-//#define ADCTHROTTLE
+
+// min and max values of throttle and brake signals in ADC counts
 #define THROTTLEOFFSET 45
 #define THROTTLEMAX 175
-#define BRAKEOFFSET 40
+#define BRAKEOFFSET 45
 #define BRAKEMAX 190
+
+// parameters for speed calculation
 #define WHEEL_CIRCUMFERENCE 550 //690 for original M365 motor
 #define GEAR_RATIO 8 //15 for original M365 motor
 
+// speed limits for invividual modes in kph
 #define SPEEDLIMIT_ECO 20
 #define SPEEDLIMIT_NORMAL 100
 #define SPEEDLIMIT_SPORT 100
-#define PH_CURRENT_MAX_ECO 500
-#define PH_CURRENT_MAX_NORMAL 1000
-#define PH_CURRENT_MAX_SPORT 1500
 
-#define FW_CURRENT_MAX 500 //max id
+// motor current limits for invividual modes in mA
+#define PH_CURRENT_MAX_ECO 5000
+#define PH_CURRENT_MAX_NORMAL 9000
+#define PH_CURRENT_MAX_SPORT 14000
 
+// motor current limit for regen in mA
+#define REGEN_CURRENT 20000
 
+// maximum current for flux weakening in mA
+#define FW_CURRENT_MAX 10000 //max id
+
+// maximum battery currents in mA
 #define BATTERYCURRENT_MAX 8000
-#define SPEEDFILTER 3
-
-#define DISPLAY_TYPE DISPLAY_TYPE_M365DASHBOARD
-#define REVERSE 1 //-1 for original M365 motor
-
-#define VOLTAGE_MIN 300
-#define REGEN_CURRENT 1000
-//#define FAST_LOOP_LOG
-//#define DISABLE_DYNAMIC_ADC
-
 #define REGEN_CURRENT_MAX 10000
 
+// motor spinning direction
+#define REVERSE 1 //-1 for original M365 motor
+
+// settings for speed PLL (angle estimation)
 #define SPEED_PLL 1 //1 for using PLL, 0 for angle extrapolation
 #define P_FACTOR_PLL 10 //7 for original M365 motor
 #define I_FACTOR_PLL 10 //7 for original M365 motor

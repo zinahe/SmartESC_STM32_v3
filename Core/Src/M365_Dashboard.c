@@ -232,9 +232,9 @@ void process_DashboardMessage(MotorState_t *MS, MotorParams_t *MP, uint8_t *mess
 			break;
 
 		case 0x65: {
-			if(map(message[Brake],BRAKEOFFSET,BRAKEMAX,0,REGEN_CURRENT)>0){
+			if(map(message[Brake],BRAKEOFFSET,BRAKEMAX,0,MP->regen_current)>0){
 				if(MS->Speed>2){
-					MS->i_q_setpoint_temp =-map(message[Brake],BRAKEOFFSET,BRAKEMAX,0,REGEN_CURRENT);
+					MS->i_q_setpoint_temp =-map(message[Brake],BRAKEOFFSET,BRAKEMAX,0,MP->regen_current);
 					MS->brake_active=true;
 				}
 				else {
@@ -243,7 +243,7 @@ void process_DashboardMessage(MotorState_t *MS, MotorParams_t *MP, uint8_t *mess
 					}
 				}
 			else{
-				MS->i_q_setpoint_temp = map(message[Throttle],THROTTLEOFFSET,THROTTLEMAX,0,MS->phase_current_limit);
+				MS->i_q_setpoint_temp = map(message[Throttle],THROTTLEOFFSET,THROTTLEMAX,0,MP->phase_current_limit);
 				MS->brake_active=false;
 				}
 			}
@@ -253,12 +253,12 @@ void process_DashboardMessage(MotorState_t *MS, MotorParams_t *MP, uint8_t *mess
 			//55 AA 06 20 61 DA 0C 02 27 00 69 FE
 			//55 AA 0E 23 01 DA 48 FF 73 06 78 78 54 51 53 32 10 67 A2 FA
 
-			if(map(message[9],BRAKEOFFSET,BRAKEMAX,0,REGEN_CURRENT)>0){
-				if(MS->Speed>2)	MS->i_q_setpoint_temp =-map(message[9],BRAKEOFFSET,BRAKEMAX,0,REGEN_CURRENT);
+			if(map(message[9],BRAKEOFFSET,BRAKEMAX,0,MP->regen_current)>0){
+				if(MS->Speed>2)	MS->i_q_setpoint_temp =-map(message[9],BRAKEOFFSET,BRAKEMAX,0,MP->regen_current);
 				else MS->i_q_setpoint_temp =0;
 				}
 			else{
-				MS->i_q_setpoint_temp = map(message[8],THROTTLEOFFSET,THROTTLEMAX,0,MS->phase_current_limit);
+				MS->i_q_setpoint_temp = map(message[8],THROTTLEOFFSET,THROTTLEMAX,0,MP->phase_current_limit);
 				}
 
 
