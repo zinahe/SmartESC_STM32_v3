@@ -15,6 +15,7 @@ jobs:
       ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
     steps:
+    - uses: actions/checkout@v2
     - name: log untrusted output
       run: |
 
