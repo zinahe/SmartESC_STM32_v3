@@ -37,7 +37,7 @@ with open('FIRM.bin.enc',"rb") as f:
         md5_hash_enc.update(byte_block)
     print(md5_hash_enc.hexdigest())
 
-version = '../tools/zip_output/DRV138'
+version = 'tools/zip_output/DRV138'
 filename = version + '-' + str(int(time.time())) + '.zip'
 zip_file = zipfile.ZipFile(filename, 'a', zipfile.ZIP_DEFLATED, False)
 
