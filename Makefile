@@ -22,7 +22,7 @@ TARGET = EBiCS_Firmware2
 # debug build?
 DEBUG = 1
 # optimization
-OPT = -Og
+OPT = -Os
 
 
 #######################################
