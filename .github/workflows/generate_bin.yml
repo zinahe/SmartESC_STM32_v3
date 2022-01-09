@@ -33,7 +33,9 @@ jobs:
         release: '9-2020-q2'
     - name: make
       run: make
-    - name: make check
-      run: make check
-    - name: make distcheck
-      run: make distcheck
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v2
+      with:
+        path: ${{ github.workspace }}/tools
+        name: ${{ github.run_number }}
+        retention-days: 5
