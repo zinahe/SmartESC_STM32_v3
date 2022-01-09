@@ -7,7 +7,7 @@ How to use:
 Method 1 (github account needed):  
 Fork the project repository to your github account by clicking the "Fork" icon.  
 Edit the config.h in your repository online and commit the changes.  
-Click on the "Actions" button in the menu bar of the github page there you can see the "workflows".  
+Click on the "Actions" button in the menu bar of the github page. There you can see the "workflows".  
 Wait until the running workflow is finished, then click on the workflow headline.
 Download the zipfile with the generated zipfile by clicking on the cube icon at the bottom of the page.  
 
