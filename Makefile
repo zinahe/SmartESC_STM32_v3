@@ -40,6 +40,7 @@ Core/Src/main.c \
 Core/Src/FOC.c \
 Core/Src/eeprom.c \
 Core/Src/button_processing.c \
+Core/Src/decr_and_flash.c \
 Core/Src/M365_Dashboard.c \
 Core/Src/stm32f1xx_it.c \
 Core/Src/print.c \
