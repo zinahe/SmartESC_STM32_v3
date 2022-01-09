@@ -5,11 +5,11 @@ This branch works with the original M365 dashboard
 
 How to use:  
 Method 1 (github account needed):  
-Fork the project repository to your github account by clicking the "Fork" icon in the upper right corner of the github page.  
+Fork the project repository to your github account by clicking the "Fork" icon.  
 Edit the config.h in your repository online and commit the changes.  
 Click on the "Actions" button in the menu bar of the github page there you can see the "workflows".  
-Click on the lastest workflow headline.
-Download the zipfile with the generated zipfile by clicking on the number next to the cube at the bottom of the side  
+Wait until the running workflow is finished, then click on the workflow headline.
+Download the zipfile with the generated zipfile by clicking on the cube icon at the bottom of the page.  
 
 Method 2 (lokal installation):  
 Install the [STM Cube IDE](https://www.st.com/en/development-tools/stm32cubeide.html#overview&secondary=st-get-software)  
