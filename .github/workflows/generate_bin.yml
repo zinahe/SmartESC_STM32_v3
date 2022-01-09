@@ -7,17 +7,16 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
+   build:
+    docker:
+      - image: jumperio/vlab-gcc-arm:latest
     steps:
-    - uses: actions/checkout@v2
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
-    - name: make check
-      run: make check
-    - name: make distcheck
-      run: make distcheck
+      - checkout
+      - run:
+          name: install mbed
+          command: pip install mbed-cli && mbed config -G ARM_PATH /usr/bin 
+      - run:
+          name: build
+          command: make
+      - store_artifacts:
+          path: BUILD/
