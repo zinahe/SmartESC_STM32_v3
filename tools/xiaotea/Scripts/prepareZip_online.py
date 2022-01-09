@@ -10,7 +10,7 @@ import os
 
 cry = XiaoTea()
 
-source='EBiCS_Firmware2.bin'
+source='build/EBiCS_Firmware2.bin'
 destination='FIRM.bin'
 shutil.copyfile(source, destination)
 
