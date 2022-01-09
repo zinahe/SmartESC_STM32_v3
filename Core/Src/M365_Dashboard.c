@@ -77,7 +77,7 @@ void M365Dashboard_init(UART_HandleTypeDef huart1) {
 	MT.ESC_version = 0x0222;
 	MT.internal_battery_version = 0x0289;
 	MT.total_riding_time[0]=0xFFFF;
-	strcpy(MT.scooter_serial, "EBiCS_0.4");
+	strcpy(MT.scooter_serial, "EBiCS_0.5");
 	MT.ESC_status_2= 0x0800;
 	char *IDp = (char *)proc_ID_address;
 	char *IDs = ((char *)sysinfoaddress)+436;
