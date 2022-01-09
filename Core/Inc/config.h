@@ -66,6 +66,11 @@
 #define BATTERYCURRENT_MAX 8000
 #define REGEN_CURRENT_MAX 10000
 
+// maximum battery voltage limits in mV
+#define BATTERYVOLTAGE_MIN 33000
+#define BATTERYVOLTAGE_MAX 42000
+
+
 // motor spinning direction
 #define REVERSE 1 //-1 for original M365 motor
 

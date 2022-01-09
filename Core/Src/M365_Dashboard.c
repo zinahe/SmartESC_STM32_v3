@@ -218,7 +218,7 @@ void process_DashboardMessage(MotorState_t *MS, MotorParams_t *MP, uint8_t *mess
 			ui8_tx_buffer[command]=message[command];
 			ui8_tx_buffer[Speed]=MS->Speed;
 			ui8_tx_buffer[Mode]=MS->mode;
-			ui8_tx_buffer[SOC]=map(MS->Voltage,33000,42000,0,96);
+			ui8_tx_buffer[SOC]=map(MS->Voltage,BATTERYVOLTAGE_MIN,BATTERYVOLTAGE_MAX,0,96);
 			if(MS->light)ui8_tx_buffer[Light]=64;
 			else ui8_tx_buffer[Light]=0;
 			ui8_tx_buffer[Beep]= MS->beep;
@@ -234,7 +234,9 @@ void process_DashboardMessage(MotorState_t *MS, MotorParams_t *MP, uint8_t *mess
 		case 0x65: {
 			if(map(message[Brake],BRAKEOFFSET,BRAKEMAX,0,MP->regen_current)>0){
 				if(MS->Speed>2){
-					MS->i_q_setpoint_temp =-map(message[Brake],BRAKEOFFSET,BRAKEMAX,0,MP->regen_current);
+					MS->i_q_setpoint_temp =map(message[Brake],BRAKEOFFSET,BRAKEMAX,0,MP->regen_current);
+					// ramp down regen strength at the max voltage to avoid the BMS shutting down the battery.
+					MS->i_q_setpoint_temp =-map(MS->i_q_setpoint_temp,BATTERYVOLTAGE_MAX-1000,BATTERYVOLTAGE_MAX,MS->i_q_setpoint_temp,0);
 					MS->brake_active=true;
 				}
 				else {

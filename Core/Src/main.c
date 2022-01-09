@@ -615,7 +615,14 @@ int main(void) {
 
 		MS.i_q_setpoint=map(ui16_reg_adc_value,THROTTLEOFFSET,THROTTLEMAX,0,MS.phase_current_limit);
 #endif
-
+		// set power to zero at low voltage
+		if(MS.Voltage<BATTERYVOLTAGE_MIN){
+			MS.i_q_setpoint= 0;
+			MS.i_d_setpoint= 0;
+			MS.error_state= lowbattery;
+		}
+		else{ //calculate setpoints for iq and id
+			MS.error_state= none;
 		if (MS.i_q_setpoint_temp > MP.phase_current_limit)
 			MS.i_q_setpoint_temp = MP.phase_current_limit;
 		if (MS.i_q_setpoint_temp < -MP.phase_current_limit)
@@ -644,6 +651,8 @@ int main(void) {
 				MS.i_d_setpoint= MS.i_d_setpoint_temp;
 			}
 		}
+
+
 
 		  if(MS.KV_detect_flag){
 			static  int8_t dir=1;
@@ -691,7 +700,7 @@ int main(void) {
 			  }
 
 		  }//end KV detect
-
+		}// end undervoltage check
 
 			uint32_SPEEDx100_cumulated -=uint32_SPEEDx100_cumulated>>SPEEDFILTER;
 			uint32_SPEEDx100_cumulated +=internal_tics_to_speedx100(q31_tics_filtered>>3);
@@ -715,9 +724,8 @@ int main(void) {
 
 			 MS.Battery_Current=get_battery_current(iq_cum>>8,id_cum>>8,uq_cum>>8,ud_cum>>8)*sign(iq_cum) * i8_direction * i8_reverse_flag;
 
-
-
-		if (MS.i_q_setpoint && !READ_BIT(TIM1->BDTR, TIM_BDTR_MOE)) {
+			 // enable PWM if power is wanted and speed is lower than idle speed
+		if (MS.i_q_setpoint && !READ_BIT(TIM1->BDTR, TIM_BDTR_MOE)&&(uint32_SPEEDx100_cumulated>>SPEEDFILTER)*1000<(ui32_KV*MS.Voltage)) {
 
 			TIM1->CCR1 = 1023; //set initial PWM values
 			TIM1->CCR2 = 1023;
