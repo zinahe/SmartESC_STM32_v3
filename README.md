@@ -34,5 +34,7 @@ double click: switch ride modes
 long press: switch off  
 very long press: run autodetect  
 
+Caution! If you want to go back to the original firmware by OTA update, use an "old" zipfile, that contains the three files FIRM.bin FIRM.bin.enc and info.txt  With a recent zip file the controller bricks and can only flashed by a STLink afterwards.
+After flashing the old original firmware you can reflash a recent version.
 
 ![PCB Layout M365](https://github.com/Koxx3/SmartESC_STM32_v3/blob/master/Documentation/PCB%20Layout%20M365.PNG)
