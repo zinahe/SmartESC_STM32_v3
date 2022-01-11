@@ -37,7 +37,7 @@ with open('tools/zip_output/FIRM.bin.enc',"rb") as f:
         md5_hash_enc.update(byte_block)
     print(md5_hash_enc.hexdigest())
 
-version = 'M365_v3'
+version = 'M365_v3_0.1'
 #filename = version + '-' + str(int(time.time())) + '.zip'
 #zip_file = zipfile.ZipFile(filename, 'a', zipfile.ZIP_DEFLATED, False)
 
