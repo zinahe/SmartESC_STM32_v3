@@ -39,7 +39,7 @@
 // min and max values of throttle and brake signals in ADC counts
 #define THROTTLEOFFSET 45
 #define THROTTLEMAX 175
-#define BRAKEOFFSET 45
+#define BRAKEOFFSET 50
 #define BRAKEMAX 190
 
 // parameters for speed calculation
