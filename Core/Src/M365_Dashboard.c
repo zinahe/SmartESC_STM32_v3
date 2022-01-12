@@ -300,7 +300,7 @@ void process_DashboardMessage(MotorState_t *MS, MotorParams_t *MP, uint8_t *mess
 				  /* Fill EraseInit structure*/
 				  EraseInitStruct.TypeErase   = FLASH_TYPEERASE_PAGES;
 				  EraseInitStruct.PageAddress = flashstartaddress;
-				  EraseInitStruct.NbPages     = 26;
+				  EraseInitStruct.NbPages     = 29;
 
 				  if (HAL_FLASHEx_Erase(&EraseInitStruct, &PAGEError) != HAL_OK)
 				  {
