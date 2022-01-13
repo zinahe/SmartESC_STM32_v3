@@ -80,7 +80,7 @@ eButtonEvent getButtonEvent()
     if (!button_down && double_pending && now - button_up_ts > DOUBLE_GAP_MILLIS_MAX) {
     	double_pending = false ;
     	button_event = SINGLE_PRESS ;
-	} else if (!button_down && double_pending && diff >= SINGLE_PRESS_MILLIS_MAX && diff <= LONG_PRESS_MILLIS_MAX) {
+	} else if (diff >= SINGLE_PRESS_MILLIS_MAX && diff <= LONG_PRESS_MILLIS_MAX) {
 		double_pending = false ;
 		button_event = LONG_PRESS ;
 	} else if (button_down && now - button_down_ts > LONG_PRESS_MILLIS_MAX) {
@@ -93,7 +93,7 @@ eButtonEvent getButtonEvent()
 
 void checkButton(MotorParams_t *MP,MotorState_t *MS) {
 	/* Infinite loop */
-	  if(MS->shutdown>16) power_control(DEV_PWR_OFF);
+	  if(MS->shutdown>85&&(MS->mode>>4)) power_control(DEV_PWR_OFF);
 	  if(main_loop_counter > 25){
 			switch( getButtonEvent() ){
 				  case NO_PRESS : break ;
@@ -102,11 +102,12 @@ void checkButton(MotorParams_t *MP,MotorState_t *MS) {
 					 // commands_printf("SINGLE_PRESS");
 				  } break ;
 				  case VERY_LONG_PRESS :   {
+					  MS->mode &= ~(1 << 4); //clear "off" (bit 4)
 					  autodetect();
 					 // commands_printf("LONG_PRESS");
 				  } break ;
 				  case LONG_PRESS :		{
-
+					  MS->mode |= (1 << 4); //set "off" (bit 4)
 					  MS->beep = 1;
 					  if(MS->shutdown==0)MS->shutdown=1;
 
@@ -165,7 +166,7 @@ void power_control(uint8_t pwr)
 
 void set_mode(MotorParams_t *MP, MotorState_t *MS){
 
-	switch( MS->mode){
+	switch( MS->mode & 0x04){ //look only on the lowest 3 bits
 		case eco :{
 			MP->phase_current_limit=PH_CURRENT_MAX_ECO/CAL_I;
 			MP->speed_limit=SPEEDLIMIT_ECO;
