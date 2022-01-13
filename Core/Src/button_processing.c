@@ -103,6 +103,7 @@ void checkButton(MotorParams_t *MP,MotorState_t *MS) {
 				  } break ;
 				  case VERY_LONG_PRESS :   {
 					  MS->mode &= ~(1 << 4); //clear "off" (bit 4)
+					  MS->shutdown=0;
 					  autodetect();
 					 // commands_printf("LONG_PRESS");
 				  } break ;
