@@ -169,7 +169,7 @@ void power_control(uint8_t pwr)
 
 void set_mode(MotorParams_t *MP, MotorState_t *MS){
 
-	switch( MS->mode & 0x04){ //look only on the lowest 3 bits
+	switch( MS->mode & 0x07){ //look only on the lowest 3 bits
 		case eco :{
 			MP->phase_current_limit=PH_CURRENT_MAX_ECO/CAL_I;
 			MP->speed_limit=SPEEDLIMIT_ECO;
