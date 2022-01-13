@@ -49,7 +49,7 @@ uint8_t buttonState() {
 eButtonEvent getButtonEvent()
 {
     static const uint32_t DOUBLE_GAP_MILLIS_MAX 	= 250;
-    static const uint32_t SINGLE_PRESS_MILLIS_MAX 	= 300;
+    static const uint32_t SINGLE_PRESS_MILLIS_MAX 	= 800;
     static const uint32_t LONG_PRESS_MILLIS_MAX 	= 5000;
 
     static uint32_t button_down_ts = 0 ;
@@ -76,11 +76,11 @@ eButtonEvent getButtonEvent()
         }
     }
 
-    uint32_t diff =  button_up_ts - button_down_ts;
+   // uint32_t diff =  button_up_ts - button_down_ts;
     if (!button_down && double_pending && now - button_up_ts > DOUBLE_GAP_MILLIS_MAX) {
     	double_pending = false ;
     	button_event = SINGLE_PRESS ;
-	} else if (diff >= SINGLE_PRESS_MILLIS_MAX && diff <= LONG_PRESS_MILLIS_MAX) {
+	} else if (button_down && now -button_down_ts >= SINGLE_PRESS_MILLIS_MAX && now -button_down_ts <= LONG_PRESS_MILLIS_MAX) {
 		double_pending = false ;
 		button_event = LONG_PRESS ;
 	} else if (button_down && now - button_down_ts > LONG_PRESS_MILLIS_MAX) {
@@ -108,8 +108,11 @@ void checkButton(MotorParams_t *MP,MotorState_t *MS) {
 				  } break ;
 				  case LONG_PRESS :		{
 					  MS->mode |= (1 << 4); //set "off" (bit 4)
-					  MS->beep = 1;
-					  if(MS->shutdown==0)MS->shutdown=1;
+
+					  if(MS->shutdown==0){
+						  MS->shutdown=1;
+						  MS->beep = 1;
+					  }
 
 				  } break ;
 
