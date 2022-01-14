@@ -188,7 +188,7 @@ typedef struct
 }PI_control_t;
 
 enum modes {eco=2,normal=0,sport=4};
-enum errors {none=0, hall=1,lowbattery=2,overcurrent=4};
+enum errors {none=0, hall=18,lowbattery=24,overcurrent=4,brake=15};
 
 void _Error_Handler(char*, int);
 

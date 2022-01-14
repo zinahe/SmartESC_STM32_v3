@@ -55,7 +55,8 @@ enum bytesOfMessage64 {
 	Mode = 6,
 	SOC = 7,
 	Light = 8,
-	Beep = 9
+	Beep = 9,
+	errorcode = 11
 } msg64;
 
 enum bytesOfGeneralMessage {
@@ -212,7 +213,6 @@ void process_DashboardMessage(MotorState_t *MS, MotorParams_t *MP, uint8_t *mess
 		case 0x64: {
 
 			ui8_tx_buffer[5]=0x00;
-			ui8_tx_buffer[11]=0x00;
 			ui8_tx_buffer[msglength]=0x08;
 			ui8_tx_buffer[receiver]=0x21;
 			ui8_tx_buffer[command]=message[command];
@@ -222,6 +222,7 @@ void process_DashboardMessage(MotorState_t *MS, MotorParams_t *MP, uint8_t *mess
 			if(MS->light)ui8_tx_buffer[Light]=64;
 			else ui8_tx_buffer[Light]=0;
 			ui8_tx_buffer[Beep]= MS->beep;
+			ui8_tx_buffer[errorcode]=MS->error_state;
 
 			addCRC((uint8_t*)ui8_tx_buffer, ui8_tx_buffer[msglength]+6);
 			HAL_HalfDuplex_EnableTransmitter(&huart1);
@@ -232,7 +233,11 @@ void process_DashboardMessage(MotorState_t *MS, MotorParams_t *MP, uint8_t *mess
 			break;
 
 		case 0x65: {
+
+			if(message[Brake]<BRAKEOFFSET>>1)MS->error_state=brake;
+			else if(MS->error_state==brake)MS->error_state=none;
 			if(map(message[Brake],BRAKEOFFSET,BRAKEMAX,0,MP->regen_current)>0){
+
 				if(MS->Speed>2){
 					MS->i_q_setpoint_temp =map(message[Brake],BRAKEOFFSET,BRAKEMAX,0,MP->regen_current);
 					// ramp down regen strength at the max voltage to avoid the BMS shutting down the battery.

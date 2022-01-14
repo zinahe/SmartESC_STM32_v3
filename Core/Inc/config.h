@@ -44,7 +44,7 @@
 
 // parameters for speed calculation
 #define WHEEL_CIRCUMFERENCE 550 //690 for original M365 motor
-#define GEAR_RATIO 8 //15 for original M365 motor
+#define GEAR_RATIO 22 //15 for original M365 motor
 
 // speed limits for invividual modes in kph
 #define SPEEDLIMIT_ECO 6
