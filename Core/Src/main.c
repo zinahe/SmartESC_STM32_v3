@@ -203,6 +203,9 @@ q31_t Hall_64 = 0;
 q31_t Hall_51 = 0;
 q31_t Hall_45 = 0;
 
+const q31_t deg_30 = 357913941;
+
+
 const uint16_t fw_current_max = FW_CURRENT_MAX/CAL_I;
 
 static q31_t tics_lower_limit;
@@ -776,7 +779,7 @@ int main(void) {
 			MS.Temperature = adcData[ADC_TEMP] * 41 >> 8; //0.16 is calibration constant: Analog_in[10mV/°C]/ADC value. Depending on the sensor LM35)
 			MS.Voltage = q31_Battery_Voltage;
 
-			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n", MS.Battery_Current,(ui32_KV*MS.Voltage/100000)-8,MS.i_q_setpoint,q31_angle_per_tic,uq_cum>>8,ud_cum>>8,iq_cum>>8 , id_cum>>8,MS.i_q_setpoint_temp);
+			printf_("%d, %d, %d, %d, %d, %d, %d, %d, %d\n", MS.system_state,i16_hall_order,i8_recent_rotor_direction,ui8_hall_case,q31_angle_per_tic>>8,uq_cum>>8,ud_cum>>8,iq_cum>>8 , id_cum>>8);
 
 			MS.Speed=tics_to_speed(q31_tics_filtered>>3);
 
@@ -1466,7 +1469,7 @@ void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef *hadc) {
 			} else {
 				ui8_overflow_flag = 1;
 				if(MS.KV_detect_flag)q31_rotorposition_absolute = q31_rotorposition_hall;
-				else q31_rotorposition_absolute = q31_rotorposition_hall+i8_direction*357913941;//offset of 30 degree to get the middle of the sector
+				else q31_rotorposition_absolute = q31_rotorposition_hall+i8_direction*deg_30;//offset of 30 degree to get the middle of the sector
 				MS.system_state=SixStep;
 					//	}
 
@@ -1853,8 +1856,8 @@ q31_t speed_PLL(q31_t actual, q31_t target) {
   q31_t q31_p = (delta >> P_FACTOR_PLL);   	//7 for Shengyi middrive, 10 for BionX IGH3
   q31_d_i += (delta >> I_FACTOR_PLL);				//11 for Shengyi middrive, 10 for BionX IGH3
 
- // if (q31_d_i>((Hall_32>>19)*500/ui16_timertics)<<16) q31_d_i = ((Hall_32>>19)*500/ui16_timertics)<<16;
- // if (q31_d_i<-((Hall_32>>19)*500/ui16_timertics)<<16) q31_d_i =- ((Hall_32>>19)*500/ui16_timertics)<<16;
+  if (q31_d_i>((deg_30>>18)*500/ui16_timertics)<<16) q31_d_i = ((deg_30>>18)*500/ui16_timertics)<<16;
+  if (q31_d_i<-((deg_30>>18)*500/ui16_timertics)<<16) q31_d_i =- ((deg_30>>18)*500/ui16_timertics)<<16;
 
   q31_t q31_d_dc = q31_p + q31_d_i;
 
