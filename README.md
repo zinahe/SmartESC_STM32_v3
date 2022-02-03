@@ -4,6 +4,15 @@ Use JST PA series 2mm pitch for the connectors. (need to be confirmed)
 This branch works with the original M365 dashboard  
 
 How to use:  
+Method 1 (github account needed):  
+Fork the project repository to your github account by clicking the "Fork" icon.  
+Edit the config.h in your repository online and commit the changes.  
+Click on the "Actions" button in the menu bar of the github page. There you can see the "workflows".  
+Wait until the running workflow is finished, then click on the workflow headline.
+Download the zipfile with the generated zipfile by clicking on the cube icon at the bottom of the page.  
+You can find a tutorial at [YouTube](https://youtu.be/Pe2UTPPxX7U)  
+
+Method 2 (lokal installation):  
 Install the [STM Cube IDE](https://www.st.com/en/development-tools/stm32cubeide.html#overview&secondary=st-get-software)  
 Start the IDE and install egit from the eclipse marketplace (Help --> Eclipse Marketplace...)  
 Import this repo from github (File --> Import --> git --> Projects from git)  
