@@ -1,4 +1,4 @@
-for the last working "stancecoke" version, switch to the v0.5 branch!
+For the last working "stancecoke" version, switch to the v0.5 branch!  
 https://github.com/Koxx3/SmartESC_STM32_v3/tree/v0.5
 
 Attention: new logic to activate the autodetect procedure:. 
